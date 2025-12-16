@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watch Later Sync</title>
+    <link rel="stylesheet" href="video-list.css">
+    <link rel="stylesheet" href="neumorphic.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            margin: 0;
+            line-height: 1;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .primary-btn {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+
+
+        #status {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        /* Search styling overrides/additions if needed */
+        .search-container {
+            position: relative;
+            margin: 10px 0;
+        }
+
+        #search-input {
+            width: 100%;
+            padding: 10px;
+            padding-right: 30px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        #clear-search-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #999;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        #clear-search-btn:hover {
+            color: #333;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- SVG Filters for PBR Neumorphism -->
+    <svg width="0" height="0" style="position: absolute; display: block; height: 0; width: 0; overflow: hidden;"
+        aria-hidden="true">
+        <defs>
+            <!-- 1. CARD / LARGE ITEM FILTER -->
+            <filter id="nm-card" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur in="SourceAlpha" stdDeviation="8" result="blur" />
+                <feOffset in="blur" dx="9" dy="9" result="offsetShadow" />
+                <feFlood flood-color="#a3b1c6" flood-opacity="0.6" />
+                <feComposite operator="in" in2="offsetShadow" result="shadow" />
+
+                <feOffset in="blur" dx="-9" dy="-9" result="offsetLight" />
+                <feFlood flood-color="#ffffff" flood-opacity="0.8" />
+                <feComposite operator="in" in2="offsetLight" result="light" />
+
+                <feMerge>
+                    <feMergeNode in="shadow" />
+                    <feMergeNode in="light" />
+                    <feMergeNode in="SourceGraphic" />
+                </feMerge>
+            </filter>
+
+            <!-- 2. BUTTON / SMALL FILTER -->
+            <filter id="nm-btn" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur" />
+
+                <!-- Shadow -->
+                <feOffset in="blur" dx="4" dy="4" result="offsetShadow" />
+                <feFlood flood-color="#a3b1c6" flood-opacity="0.8" /> <!-- darker shadow -->
+                <feComposite operator="in" in2="offsetShadow" result="shadow" />
+
+                <!-- Highlight -->
+                <feOffset in="blur" dx="-4" dy="-4" result="offsetLight" />
+                <feFlood flood-color="#c8cdd7" flood-opacity="0.8" /> <!-- Grayish highlight as requested -->
+                <feComposite operator="in" in2="offsetLight" result="light" />
+
+                <!-- PBR Specular Shine -->
+                <feSpecularLighting in="blur" surfaceScale="3" specularConstant="0.8" specularExponent="15"
+                    lighting-color="#ffffff" result="spec">
+                    <fePointLight x="-5000" y="-5000" z="200" />
+                </feSpecularLighting>
+                <feComposite in="spec" in2="SourceAlpha" operator="in" result="specOut" />
+
+                <feMerge>
+                    <feMergeNode in="shadow" />
+                    <feMergeNode in="light" />
+                    <feMergeNode in="SourceGraphic" />
+                    <feMergeNode in="specOut" />
+                </feMerge>
+            </filter>
+
+            <!-- 3. BUTTON PRESSED / INSET -->
+            <filter id="nm-inset" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur" />
+
+                <feOffset dx="2" dy="2" in="blur" result="shOut" />
+                <feComposite in="shOut" in2="SourceAlpha" operator="in" result="innerShadow" />
+                <feFlood flood-color="#a3b1c6" flood-opacity="0.9" />
+                <feComposite operator="in" in2="innerShadow" result="finalShadow" />
+
+                <feOffset dx="-2" dy="-2" in="blur" result="hlOut" />
+                <feComposite in="hlOut" in2="SourceAlpha" operator="in" result="innerHighlight" />
+                <feFlood flood-color="#ffffff" flood-opacity="0.6" />
+                <feComposite operator="in" in2="innerHighlight" result="finalHighlight" />
+
+                <feMerge>
+                    <feMergeNode in="SourceGraphic" />
+                    <feMergeNode in="finalShadow" />
+                    <feMergeNode in="finalHighlight" />
+                </feMerge>
+            </filter>
+        </defs>
+    </svg>
+    <div class="header">
+        <h1>Watch Later Sync</h1>
+        <div class="header-controls">
+            <button id="theme-toggle" class="theme-toggle" title="Toggle Theme">🌗</button>
+            <button id="change-list-btn" class="primary-btn">Change List</button>
+            <button id="select-file-btn" class="primary-btn">Select Data Directory</button>
+            <button id="download-thumbs-btn" class="primary-btn">Refresh Thumbnails</button>
+        </div>
+    </div>
+    <div id="status">No save file selected. Server running on port 5000.</div>
+
+    <div class="search-container">
+        <input type="text" id="search-input" placeholder="Search videos...">
+        <button id="clear-search-btn" class="hidden">&times;</button>
+    </div>
+
+    <h2>Synced Videos</h2>
+    <ul id="video-list">
+        <li style="padding: 20px; text-align: center; color: #999;">Waiting for sync...</li>
+    </ul>
+
+    <!-- Error Logger -->
+    <script>
+        try {
+            const fs = require('fs');
+            const path = require('path');
+            const os = require('os');
+            const logPath = path.join(os.homedir(), 'Desktop', 'debug_log.txt');
+
+            function logToFile(msg) {
+                const time = new Date().toISOString();
+                fs.appendFileSync(logPath, `[${time}] ${msg}\n`);
+            }
+
+            logToFile(`--- App Started --- at ${window.location.href}`);
+            logToFile(`Environment: require=${typeof require}, window.require=${typeof window.require}`);
+
+            // Capturing error listener to catch resource loading failures (like 404s)
+            window.addEventListener('error', function (event) {
+                if (event.target && (event.target.tagName === 'SCRIPT' || event.target.tagName === 'IMG')) {
+                    logToFile(`RESOURCE ERROR: Failed to load ${event.target.src || event.target.href}`);
+                } else {
+                    logToFile(`ERROR: ${event.message} at ${event.filename}:${event.lineno}:${event.colno}`);
+                }
+            }, true);
+
+            window.addEventListener('unhandledrejection', event => {
+                logToFile(`PROMISE ERROR: ${event.reason}`);
+            });
+
+            console.log = (function (oldLog) {
+                return function (...args) {
+                    logToFile(`LOG: ${args.join(' ')}`);
+                    oldLog.apply(console, args);
+                };
+            })(console.log);
+
+        } catch (e) {
+            alert('Logger Failed: ' + e.message);
+        }
+    </script>
+
+    <!-- Import Map Removed: Using explicit relative paths in libs -->
+    <script type="module" src="renderer.js" onerror="logToFile('CRITICAL: renderer.js onerror triggered!')"></script>
+</body>
+
+</html>

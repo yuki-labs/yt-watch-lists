@@ -1,0 +1,273 @@
+#video-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.video-item {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    position: relative;
+}
+
+/* Global Transitions for smooth movement/theme switch */
+.video-item,
+.header,
+#status,
+.search-container,
+h2,
+button,
+input {
+    /* Base Transition for Exit Animation */
+    transition: background-color 0.25s ease,
+        box-shadow 0.25s ease,
+        color 0.25s ease,
+        margin 0.25s ease,
+        padding 0.25s ease,
+        border-radius 0.25s ease,
+        transform 0.25s ease;
+}
+
+.video-thumbnail {
+    width: 120px;
+    height: 68px;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-right: 15px;
+    flex-shrink: 0;
+}
+
+.video-info {
+    flex-grow: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin-right: 40px;
+    min-width: 0;
+    /* Critical for text-overflow to work in flex child */
+}
+
+.title-container {
+    margin-bottom: 4px;
+}
+
+/* Desktop specific title/url styles since it uses divs not anchors */
+.video-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #333;
+    line-height: normal;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.video-url {
+    color: #888;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.video-link {
+    text-decoration: none;
+    color: #333;
+    font-size: 1rem;
+    font-weight: 600;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    /* Standard property for compatibility */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.4;
+}
+
+.video-link:hover {
+    color: #cc0000;
+}
+
+.edit-input {
+    width: 100%;
+    font-size: 1rem;
+    padding: 4px;
+    border: 1px solid #cc0000;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+/* Menu Styles */
+.menu-btn {
+    position: absolute;
+    top: 10px;
+    right: 5px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    font-weight: bold;
+    color: #555;
+    cursor: pointer;
+    padding: 0 10px;
+    line-height: 1;
+    z-index: 10;
+}
+
+.menu-btn:hover {
+    color: #000;
+}
+
+/* Horizontal Bar Layout (Default Theme) */
+.dropdown-menu {
+    position: absolute;
+    /* Position above/below */
+    bottom: 100%;
+    /* Align with bottom edge */
+    left: 0;
+    right: 0;
+    margin-bottom: 10px;
+    z-index: 100;
+    display: none;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    /* Transparent wrapper */
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    pointer-events: none;
+    /* content pointer-events are auto */
+}
+
+.dropdown-menu.show {
+    display: flex;
+}
+
+/* The White Pill Bar */
+.menu-list-container {
+    pointer-events: auto;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 50px;
+    padding: 5px;
+    gap: 5px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.dropdown-item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: #555;
+    transition: all 0.2s;
+}
+
+.dropdown-item:hover {
+    background-color: #f5f5f5;
+    color: #000;
+    border-color: #eee;
+}
+
+.dropdown-item.delete-item {
+    color: #cc0000;
+}
+
+.dropdown-item.delete-item:hover {
+    background-color: #fff0f0;
+}
+
+/* Hide text labels in bar view to fit icons */
+.menu-text {
+    display: none;
+}
+
+.menu-icon {
+    display: inline-block;
+}
+
+/* Pagination Arrows */
+.dropdown-control-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid #ddd;
+    background: white;
+    color: #555;
+    cursor: pointer;
+    font-size: 1.2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    pointer-events: auto;
+    margin: 0 5px;
+}
+
+.dropdown-control-btn:hover {
+    background: #f9f9f9;
+    color: #000;
+}
+
+.video-item.dragging {
+    opacity: 0.5;
+    border: 2px dashed #cc0000;
+}
+
+/* Base Theme Toggle Style */
+#theme-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.5rem;
+    /* Make it visible */
+    padding: 5px;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+
+
+/* Animation state for Unified Edit Bar Shift */
+.shift-up {
+    transform: translateY(-52px);
+    transition: transform 0.25s ease;
+}
+
+.header.shift-up,
+.button-group.shift-up,
+.search-container.shift-up,
+#status.shift-up,
+h2.shift-up,
+.video-item.shift-up {
+    transform: translateY(-52px);
+    transition: transform 0.25s ease;
+}
+
+.shift-down {
+    transform: translateY(72px);
+    transition: transform 0.25s ease;
+}
+
+.video-item.shift-down {
+    transform: translateY(72px);
+    transition: transform 0.25s ease;
+}

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watch Later - Debug View</title>
+    <link rel="stylesheet" href="video-list.css">
+    <link rel="stylesheet" href="neu_theme.css">
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+        }
+
+        /* Mock some layout */
+        .video-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .thumbnail {
+            width: 120px;
+            height: 68px;
+            background: #ccc;
+            border-radius: 8px;
+        }
+
+        .info {
+            flex: 1;
+        }
+
+        .actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .spacer {
+            height: 1000px;
+        }
+
+        /* Force scrolling */
+    </style>
+</head>
+
+<body class="neumorphic">
+
+    <h1>Debug Verification</h1>
+    <div id="status">Three.js Hybrid Architecture</div>
+
+    <!-- MOCK UI ELEMENTS -->
+
+    <div class="header" style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <button id="select-file-btn" class="primary-btn">Select Directory</button>
+        <button id="download-thumbs-btn" class="primary-btn">Refresh Thumbnails</button>
+        <input type="text" id="search-input" placeholder="Search videos...">
+        <div class="theme-toggle" id="theme-toggle">🌙</div>
+    </div>
+
+    <div id="video-list">
+        <!-- Mock Items -->
+        <div class="video-item neu-element">
+            <div class="video-thumbnail" style="width:120px; height:68px; background:#ddd;"></div>
+            <div class="video-info" style="flex:1; padding:0 10px;">
+                <h3>Example Video 1</h3>
+                <p>Channel Name</p>
+            </div>
+            <button class="menu-btn">⋮</button>
+        </div>
+
+        <div class="video-item neu-element">
+            <div class="video-thumbnail" style="width:120px; height:68px; background:#ddd;"></div>
+            <div class="video-info" style="flex:1; padding:0 10px;">
+                <h3>Example Video 2</h3>
+                <p>Channel Name</p>
+            </div>
+            <button class="menu-btn">⋮</button>
+        </div>
+
+        <div class="video-item neu-element">
+            <div class="video-thumbnail" style="width:120px; height:68px; background:#ddd;"></div>
+            <div class="video-info" style="flex:1; padding:0 10px;">
+                <h3>Example Video 3 (Scroll Testing)</h3>
+                <p>Channel Name</p>
+            </div>
+            <button class="menu-btn">⋮</button>
+        </div>
+    </div>
+
+    <div class="spacer"></div>
+
+    <!-- Load Three.js from Map (since we are not in Node) -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/examples/jsm/geometries/RoundedBoxGeometry.js": "https://unpkg.com/three@0.160.0/examples/jsm/geometries/RoundedBoxGeometry.js"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import { ThreeManager } from './js/ThreeManager.js';
+
+        // 1. Init Manager
+        const manager = new ThreeManager();
+        manager.enable();
+
+        console.log("Manager enabled");
+
+        // 2. Scan (Desktop app calls this on mutation)
+        setTimeout(() => {
+            manager.scan();
+            console.log("Scanned elements");
+        }, 500);
+
+    </script>
+</body>
+
+</html>

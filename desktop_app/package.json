@@ -1,0 +1,21 @@
+{
+    "name": "watch-later-desktop",
+    "version": "1.0.0",
+    "description": "Desktop companion for Watch Later extension",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron .",
+        "build": "npx electron-packager . --overwrite --out=build --ignore=\"^/dist\" --ignore=\"^/build\""
+    },
+    "dependencies": {
+        "body-parser": "^1.20.2",
+        "cors": "^2.8.5",
+        "express": "^4.18.2",
+        "three": "^0.181.2"
+    },
+    "devDependencies": {
+        "electron": "^39.2.6",
+        "electron-builder": "^26.0.12",
+        "electron-packager": "^17.1.2"
+    }
+}

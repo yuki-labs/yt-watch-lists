@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watch Later</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Invisible scroll spacer - allows scrolling up to see header when content shifts -->
+        <div id="scroll-spacer"></div>
+        <header class="header">
+            <h1>Watch Later</h1>
+        </header>
+        <main>
+            <div class="button-group">
+                <button id="add-btn" class="primary-btn">Add Current Video</button>
+                <button id="sync-btn" class="secondary-btn">Sync to Desktop</button>
+                <div class="stacked-controls">
+                    <button id="theme-toggle" class="theme-toggle" title="Toggle Theme">🌗</button>
+                    <button id="change-list-btn" class="theme-toggle" title="Change List">≣</button>
+                </div>
+            </div>
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Search videos..." class="search-input">
+                <button id="clear-search-btn" class="hidden">&times;</button>
+            </div>
+            <div id="message" class="hidden"></div>
+            <ul id="video-list">
+                <!-- Video items will be added here dynamically -->
+            </ul>
+            <div id="empty-state" class="hidden">No videos saved yet.</div>
+        </main>
+    </div>
+    <script type="module" src="popup.js"></script>
+</body>
+
+</html>

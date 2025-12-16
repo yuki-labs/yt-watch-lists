@@ -1,0 +1,277 @@
+/* Neumorphic Theme - Robust Rebuild (Hardcoded Values) */
+/* Base Colors: BG=#e0e5ec, ShadowDark=#a3b1c6, ShadowLight=#ffffff */
+
+body.neumorphic {
+    background-color: #e0e5ec;
+    color: #4a4a4a;
+    /* transition: padding 0.25s ease; Removed to allow instant layout snap + scroll compensation */
+}
+
+body.neumorphic .header {
+    background-color: #e0e5ec;
+    /* Ensure Header stays on top of shifting content */
+    position: relative;
+    z-index: 1002;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+body.neumorphic #video-list {
+    background: transparent;
+    box-shadow: none;
+}
+
+/* 1. CARDS (Video Items) - Convex (Pop Out) */
+body.neumorphic .video-item {
+    background-color: #e0e5ec;
+    border: none;
+    border-radius: 15px;
+    /* Hardcoded: Darker shadow #9baec8 for better visibility */
+    box-shadow: 9px 9px 16px #9baec8,
+        -9px -9px 16px #ffffff;
+    margin-bottom: 24px;
+    padding: 20px;
+    /* Transition all animatable properties for smooth theme toggle */
+    transition: transform 0.25s ease,
+        box-shadow 0.25s ease,
+        background-color 0.25s ease,
+        border-radius 0.25s ease,
+        padding 0.25s ease,
+        margin 0.25s ease;
+    /* Establish positioning context for absolute children (menu) */
+    position: relative;
+    box-sizing: border-box;
+}
+
+body.neumorphic .video-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 12px 12px 20px #9baec8,
+        -12px -12px 20px #ffffff;
+}
+
+/* 2. BUTTONS - Capsule Shape & Convex */
+body.neumorphic button {
+    background-color: #e0e5ec;
+    border: none;
+    border-radius: 50px;
+    color: #4a4a4a;
+    box-shadow: 6px 6px 10px #9baec8,
+        -6px -6px 10px #ffffff;
+    transition: all 0.2s ease;
+}
+
+body.neumorphic button:hover {
+    transform: translateY(-2px);
+    box-shadow: 8px 8px 14px #9baec8,
+        -8px -8px 14px #ffffff;
+}
+
+
+
+body.neumorphic button:active {
+    transform: translateY(1px);
+    box-shadow: inset 4px 4px 8px #9baec8,
+        inset -4px -4px 8px #ffffff;
+}
+
+/* Specific Buttons */
+body.neumorphic .theme-toggle {
+    background-color: #e0e5ec;
+    color: #ffd700;
+}
+
+/* 3. INPUTS - Concave (Pressed In) */
+body.neumorphic input[type="text"] {
+    background-color: #e0e5ec;
+    border: none;
+    border-radius: 50px;
+    padding: 12px 24px;
+    color: #4a4a4a;
+    box-shadow: inset 6px 6px 10px #9baec8,
+        inset -6px -6px 10px #ffffff;
+}
+
+body.neumorphic input[type="text"]:focus {
+    outline: none;
+    box-shadow: inset 8px 8px 14px #9baec8,
+        inset -8px -8px 14px #ffffff;
+}
+
+/* 4. EXTRAS */
+body.neumorphic .video-thumbnail {
+    border-radius: 10px;
+}
+
+/* Horizontal Icon Menu (The "Bar") */
+body.neumorphic .dropdown-menu {
+    /* Layout: Horizontal Row: < [Bar] > */
+    display: none;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    /* Push buttons to edges */
+    gap: 10px;
+
+    /* Wrapper Positioning (Transparent) */
+    position: absolute;
+    top: auto;
+    bottom: 100%;
+
+    /* Align Left/Right Edge with Entry Edges */
+    /* Pin to the padding edges of the relative parent (.video-item) */
+    /* User request: "too far apart" -> Align with content box (0px) not border box (-20px) */
+    left: 0;
+    right: 0;
+    width: auto;
+    transform: none;
+    /* Remove centering transform */
+    box-sizing: border-box;
+
+    margin-bottom: 10px;
+    /* Space between Menu Bottom and Entry Top */
+    min-width: unset;
+    /* User said edges aligned. So buttons touch the imaginary border. */
+    padding: 0;
+
+    background-color: transparent;
+    box-shadow: none;
+    border: none;
+    border-radius: 0;
+    z-index: 1000;
+}
+
+body.neumorphic .dropdown-menu.show {
+    display: flex;
+}
+
+/* The Actual "Edit Bar" (Pill Shape) */
+body.neumorphic .menu-list-container {
+    display: flex;
+    flex-direction: row;
+    /* Allow resizing based on content, do not force full width */
+    flex-grow: 0;
+    /* Updated: 0 to prevent stretching */
+    /* Expand to fill space between buttons */
+    min-width: 0;
+    /* Shrink if too many buttons (fail-safe) */
+    justify-content: center;
+    gap: 4px;
+    padding: 5px;
+    /* Updated: uniform padding */
+    /* Add horizontal padding for "snug" look around buttons */
+    background-color: #e0e5ec;
+    border-radius: 50px;
+    box-shadow: 8px 8px 16px #9baec8, -8px -8px 16px #ffffff;
+    pointer-events: auto;
+    margin: 0 auto;
+    /* Centering */
+}
+
+/* Buttons (Arrows) sitting on sides */
+body.neumorphic .dropdown-control-btn {
+    font-size: 1.2rem;
+    color: #4a4a4a;
+    background-color: #e0e5ec;
+    border: none;
+    cursor: pointer;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.2s ease;
+    box-shadow: 4px 4px 8px #9baec8, -4px -4px 8px #ffffff;
+    /* Prevent shrinking */
+    flex-shrink: 0;
+    /* Ensure no margins disrupt alignment */
+    margin: 0;
+}
+
+body.neumorphic .dropdown-control-btn:hover {
+    box-shadow: 6px 6px 12px #9baec8, -6px -6px 12px #ffffff;
+    transform: translateY(-1px);
+    color: #000;
+}
+
+body.neumorphic .dropdown-item {
+    border-radius: 50%;
+    /* Circles for icons */
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* Default: Visible "button" styling */
+    background-color: #e0e5ec;
+    box-shadow: 4px 4px 8px #9baec8,
+        -4px -4px 8px #ffffff;
+    font-size: 1.2rem;
+    transition: all 0.2s ease;
+}
+
+body.neumorphic .dropdown-item:hover {
+    background-color: #e0e5ec;
+    transform: translateY(-2px);
+    box-shadow: 4px 4px 8px #9baec8,
+        -4px -4px 8px #ffffff;
+}
+
+/* Transition Animations (Smooth Fade-In & Layout Slide) */
+/* Include margin/padding so the list expands smoothly instead of snapping */
+body.neumorphic .video-item,
+body.neumorphic .header,
+body.neumorphic #status,
+body.neumorphic .search-container,
+body.neumorphic h2,
+body.neumorphic h1,
+body.neumorphic button,
+body.neumorphic input,
+body.neumorphic .button-group,
+body.neumorphic .theme-toggle {
+    transition: background-color 0.25s ease,
+        box-shadow 0.25s ease,
+        color 0.25s ease,
+        margin 0.25s ease,
+        padding 0.25s ease,
+        border-radius 0.25s ease,
+        transform 0.25s ease;
+    /* Restoring transform animation */
+}
+
+/* Utilities */
+body.neumorphic .hidden {
+    display: none !important;
+}
+
+/* Icon & Text visibility in Menu */
+body.neumorphic .menu-text {
+    display: none;
+}
+
+body.neumorphic .menu-icon {
+    display: inline-block;
+    line-height: 1;
+    margin: 0;
+    padding: 0;
+}
+
+/* Animation State: Shift Up (when menu is open) */
+
+/* 1. Static UI Elements (Topmost Context) - Match Video Item Shift for Consistency */
+body.neumorphic .header.shift-up,
+body.neumorphic .button-group.shift-up,
+body.neumorphic #status.shift-up,
+body.neumorphic .search-container.shift-up,
+body.neumorphic h2.shift-up,
+body.neumorphic h1.shift-up {
+    transform: translateY(-52px);
+}
+
+/* 2. Video Items (List Context) - Standard Shift */
+body.neumorphic .video-item.shift-up {
+    transform: translateY(-52px);
+}
+
+/* Margin Expansion removed per user feedback */

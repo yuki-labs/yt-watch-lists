@@ -1,0 +1,97 @@
+/* Height chain for scrolling to work */
+html,
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    /* Theme transition: Animate when switching themes (both entry AND exit) */
+    transition: background-color 0.25s ease;
+}
+
+/* Theme transitions for common elements (ensures exit animation works) */
+header,
+.header,
+h1,
+h2,
+button,
+input,
+.video-item,
+.button-group,
+.search-container,
+#message {
+    transition: background-color 0.25s ease,
+        box-shadow 0.25s ease,
+        color 0.25s ease,
+        border-radius 0.25s ease,
+        padding 0.25s ease,
+        margin 0.25s ease;
+}
+
+/* Container must be scrollable for the spacer to work */
+.container {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Scroll spacer - provides scroll space above header for neumorphic shift animation */
+/* In neumorphic mode, spacer is always at full height (scrolled past on load) */
+/* This avoids DOM changes when menu opens, preventing auto-scroll issues */
+#scroll-spacer {
+    height: 0;
+}
+
+body.neumorphic #scroll-spacer {
+    height: 100px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+h1 {
+    font-size: 1.4rem;
+    margin: 0;
+    color: #cc0000;
+}
+
+.hidden {
+    display: none;
+}
+
+#empty-state {
+    text-align: center;
+    color: #777;
+    margin-top: 20px;
+    font-style: italic;
+    font-size: 1rem;
+}
+
+#message {
+    margin-top: 12px;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.error {
+    background-color: #f8d7da;
+    color: #721c24;
+}

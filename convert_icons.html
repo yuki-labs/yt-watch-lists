@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+    <img id="svg-img" src="icon.svg" style="width: 128px; height: 128px;">
+    <div id="output"></div>
+    <script>
+        window.onload = function () {
+            console.log("Window loaded, starting conversion...");
+            try {
+                convert();
+            } catch (e) {
+                console.error("Conversion failed:", e);
+                const errDiv = document.createElement('div');
+                errDiv.id = 'error';
+                errDiv.textContent = e.toString();
+                document.body.appendChild(errDiv);
+            }
+        };
+
+        function convert() {
+            const img = document.getElementById('svg-img');
+            console.log("Image loaded:", img.complete, img.naturalWidth);
+
+            const sizes = [16, 48, 128];
+            const output = document.getElementById('output');
+
+            sizes.forEach(size => {
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, size, size);
+
+                const dataUrl = canvas.toDataURL('image/png');
+                const div = document.createElement('div');
+                div.id = 'icon' + size;
+                div.textContent = dataUrl;
+                output.appendChild(div);
+                console.log("Converted size:", size);
+            });
+
+            const done = document.createElement('div');
+            done.id = 'done';
+            done.textContent = 'DONE';
+            output.appendChild(done);
+            console.log("Conversion complete.");
+        }
+    </script>
+</body>
+
+</html>

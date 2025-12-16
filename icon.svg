@@ -1,0 +1,10 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- Edge-to-edge Red Circle -->
+  <circle cx="64" cy="64" r="64" fill="#FF0000" />
+  
+  <!-- Play Triangle (White) -->
+  <path d="M44 36 L96 64 L44 92 Z" fill="white" />
+  
+  <!-- Minimal Clock Overlay (Dark Red Hands) -->
+
+</svg>

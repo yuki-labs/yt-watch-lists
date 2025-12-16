@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Single Sheet Neumorphism (Height Map)</title>
+    <style>
+        body {
+            background-color: #e0e5ec;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: sans-serif;
+            gap: 40px;
+        }
+
+        .container {
+            display: flex;
+            gap: 60px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .box {
+            width: 150px;
+            height: 150px;
+            /* No Border Radius on the div itself if we rely entirely on alpha? 
+               actually commonly we keep it. */
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #4a4a4a;
+            font-size: 1.2rem;
+        }
+
+        .label {
+            margin-top: 15px;
+            text-align: center;
+            color: #666;
+            max-width: 200px;
+            font-size: 0.9rem;
+        }
+
+        .demo-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 1. LAYERED (Current PBR) */
+        .pbr-layered {
+            background-color: #e0e5ec;
+            /* This was our previous approximation using offsets + specular */
+            filter: url(#nm-btn);
+        }
+
+        /* 2. CONTINUOUS SHEET (Height Map) */
+        .pbr-continuous {
+            background-color: #e0e5ec;
+            filter: url(#nm-sheet);
+        }
+
+        /* 3. CONTINUOUS INSET */
+        .pbr-continuous-inset {
+            background-color: #e0e5ec;
+            filter: url(#nm-sheet-inset);
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Single Sheet Material Simulation</h1>
+
+    <div class="container">
+        <!-- Previous -->
+        <div class="demo-group">
+            <div class="box pbr-layered">Layered</div>
+            <div class="label">Previous "PBR"<br>(Offset Layers)</div>
+        </div>
+
+        <!-- New Continuous -->
+        <div class="demo-group">
+            <div class="box pbr-continuous">Bump</div>
+            <div class="label">True Height Map<br>(Light applied to Blur)</div>
+        </div>
+
+        <!-- New Continuous Inset -->
+        <div class="demo-group">
+            <div class="box pbr-continuous-inset">Indent</div>
+            <div class="label">True Height Map<br>(Inverted)</div>
+        </div>
+    </div>
+
+    <svg width="0" height="0" style="position: absolute; display: block;">
+        <defs>
+            <!-- REUSE: Previous Filter for Comparison -->
+            <filter id="nm-btn" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur" />
+                <feOffset in="blur" dx="4" dy="4" result="offsetShadow" />
+                <feFlood flood-color="#a3b1c6" flood-opacity="0.8" />
+                <feComposite operator="in" in2="offsetShadow" result="shadow" />
+                <feOffset in="blur" dx="-4" dy="-4" result="offsetLight" />
+                <feFlood flood-color="#c8cdd7" flood-opacity="0.8" />
+                <feComposite operator="in" in2="offsetLight" result="light" />
+                <feSpecularLighting in="blur" surfaceScale="3" specularConstant="0.8" specularExponent="15"
+                    lighting-color="#ffffff" result="spec">
+                    <fePointLight x="-5000" y="-5000" z="200" />
+                </feSpecularLighting>
+                <feComposite in="spec" in2="SourceAlpha" operator="in" result="specOut" />
+                <feMerge>
+                    <feMergeNode in="shadow" />
+                    <feMergeNode in="light" />
+                    <feMergeNode in="SourceGraphic" />
+                    <feMergeNode in="specOut" />
+                </feMerge>
+            </filter>
+
+            <!-- NEW: Continuous Sheet Filter (Bump) -->
+            <filter id="nm-sheet" x="-50%" y="-50%" width="200%" height="200%">
+                <!-- 1. Create a Height Map by blurring the alpha -->
+                <feGaussianBlur in="SourceAlpha" stdDeviation="6" result="blurMap" />
+
+                <!-- 2. Lighting the Height Map -->
+                <!-- Specular (Highlight) -->
+                <!-- surfaceScale: Height of the bump. -->
+                <feSpecularLighting in="blurMap" surfaceScale="8" specularConstant="1" specularExponent="20"
+                    lighting-color="#ffffff" result="specOut">
+                    <fePointLight x="-5000" y="-5000" z="300" />
+                </feSpecularLighting>
+
+                <!-- Diffuse (Shadow/Form) - This creates the main 3D shape definition -->
+                <feDiffuseLighting in="blurMap" surfaceScale="8" diffuseConstant="1.5" lighting-color="#ffffff"
+                    result="diffuseOut">
+                    <!-- Moving light slightly to create contrast on the 'away' side -->
+                    <fePointLight x="-5000" y="-5000" z="300" />
+                </feDiffuseLighting>
+
+                <!-- The Diffuse output is white-on-black. The shadows are the dark parts. -->
+                <!-- We need to composite this carefully. -->
+
+                <!-- Alternative Shadow: Standard offset blur logic is often cleaner for the "Dark" side than DiffuseLighting which goes to black. -->
+                <!-- Let's try combining Specular Reflection (Highlight) + Offset Blur (Shadow) -->
+
+                <!-- Shadow Construction -->
+                <feOffset in="blurMap" dx="6" dy="6" result="offsetBlur" />
+                <feComposite in="offsetBlur" in2="SourceAlpha" operator="out" result="outerShadow" />
+                <feFlood flood-color="#a3b1c6" flood-opacity="0.8" />
+                <feComposite operator="in" in2="outerShadow" result="finalShadow" />
+
+                <!-- Cut brightness from Specular to only be outside/on edge? -->
+                <feComposite in="specOut" in2="SourceAlpha" operator="in" result="specIn" />
+                <!-- Actually for "Bump", lighting is mainly on the edge facing light -->
+
+                <!-- Compose -->
+                <feMerge>
+                    <!-- Shadow (Bottom Right) -->
+                    <feMergeNode in="finalShadow" />
+
+                    <!-- Base Shape -->
+                    <feMergeNode in="SourceGraphic" />
+
+                    <!-- Highlight (Top Left - generated by Specular on Blur) -->
+                    <!-- We mask it to be mostly outside or on the rim -->
+                    <feMergeNode in="specOut" />
+                </feMerge>
+            </filter>
+
+            <!-- NEW: Continuous Sheet Filter (Indent) -->
+            <filter id="nm-sheet-inset" x="-50%" y="-50%" width="200%" height="200%">
+                <!-- 1. Height Map -->
+                <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blurMap" />
+
+                <!-- Shadow (Top Left - Inner) -->
+                <feOffset in="blurMap" dx="4" dy="4" result="offsetBlur" />
+                <feComposite in="offsetBlur" in2="SourceAlpha" operator="in" result="innerShadowShape" />
+                <feFlood flood-color="#a3b1c6" flood-opacity="0.9" />
+                <feComposite operator="in" in2="innerShadowShape" result="finalShadow" />
+
+                <!-- Highlight (Bottom Right - Inner) -->
+                <feOffset in="blurMap" dx="-4" dy="-4" result="offsetBlurLight" />
+                <feComposite in="offsetBlurLight" in2="SourceAlpha" operator="in" result="innerHighlightShape" />
+                <feFlood flood-color="#ffffff" flood-opacity="0.9" />
+                <feComposite operator="in" in2="innerHighlightShape" result="finalHighlight" />
+
+                <feMerge>
+                    <feMergeNode in="SourceGraphic" />
+                    <feMergeNode in="finalShadow" />
+                    <feMergeNode in="finalHighlight" />
+                </feMerge>
+            </filter>
+        </defs>
+    </svg>
+
+</body>
+
+</html>

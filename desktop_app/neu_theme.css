@@ -1,0 +1,133 @@
+/* Neumorphic Theme Overrides - Three.js Hybrid Version */
+body.neumorphic {
+    background-color: transparent;
+    /* Main bg is drawn by Three.js scene background */
+    color: #4a4a4a;
+}
+
+/* Ensure Canvas is behind */
+#three-bg {
+    z-index: -1;
+}
+
+/* CARDS - Transparent, no shadow, no filter */
+body.neumorphic .video-item {
+    background-color: transparent !important;
+    border: none;
+    box-shadow: none !important;
+    filter: none !important;
+    margin-bottom: 20px;
+    padding: 15px;
+    transition: margin-bottom 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), transform 0.2s ease;
+}
+
+body.neumorphic .video-item.shift-up {
+    transform: translateY(-10px);
+}
+
+/* BUTTONS - Transparent */
+body.neumorphic button.primary-btn,
+body.neumorphic button.menu-btn,
+body.neumorphic button.move-btn,
+body.neumorphic .theme-toggle,
+body.neumorphic #add-btn,
+body.neumorphic #select-file-btn,
+body.neumorphic #download-thumbs-btn {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none;
+    box-shadow: none !important;
+    filter: none !important;
+    color: #4a4a4a;
+    /* Keep text visible */
+    z-index: 10;
+    /* Ensure on top of canvas */
+}
+
+/* Button Colors - We tint the 3D mesh, but text color remains */
+body.neumorphic #select-file-btn {
+    color: #004085 !important;
+}
+
+body.neumorphic #download-thumbs-btn {
+    color: #0f5132 !important;
+}
+
+/* INPUTS - Transparent */
+body.neumorphic input[type="text"] {
+    background-color: rgba(255, 255, 255, 0.4);
+    /* Slight white for contrast so text is readable if mesh lags? */
+    border: none;
+    box-shadow: none !important;
+    filter: none !important;
+    color: #4a4a4a;
+    border-radius: 50px;
+    padding: 12px 20px;
+}
+
+/* Dropdown specific */
+/* For now, let's keep dropdowns as CSS/SVG (filters) because they pop over and might not be tracked by ThreeManager yet */
+body.neumorphic .dropdown-menu {
+    background-color: #e0e5ec;
+    border: none;
+    border-radius: 50px;
+    box-shadow: none !important;
+    filter: url(#nm-card);
+    /* Keep SVG filter for dropdowns */
+    top: auto;
+    bottom: 100%;
+    left: auto;
+    right: 0;
+    transform: none;
+    margin-bottom: 10px;
+    margin-top: 10px;
+    display: none;
+    flex-direction: row;
+    padding: 5px;
+    min-width: auto;
+    width: max-content;
+    white-space: nowrap;
+    z-index: 200;
+}
+
+body.neumorphic .dropdown-menu.show {
+    display: flex;
+}
+
+body.neumorphic .dropdown-item {
+    background-color: transparent;
+    color: #4a4a4a;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    margin: 0 2px;
+    font-size: 1.2rem;
+    box-shadow: none;
+    transition: all 0.2s ease;
+}
+
+body.neumorphic .dropdown-item:hover {
+    background-color: #e0e5ec;
+    box-shadow: none !important;
+    filter: url(#nm-btn);
+    transform: translateY(-2px);
+}
+
+body.neumorphic .menu-text {
+    display: none;
+}
+
+body.neumorphic .menu-icon {
+    display: inline;
+    line-height: 1;
+    margin-right: 0;
+}
+
+.menu-icon {
+    margin-right: 8px;
+}

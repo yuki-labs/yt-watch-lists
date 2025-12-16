@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PBR Neumorphism Prototype</title>
+    <style>
+        body {
+            background-color: #e0e5ec;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: sans-serif;
+            gap: 50px;
+        }
+
+        .container {
+            display: flex;
+            gap: 50px;
+        }
+
+        .box {
+            width: 150px;
+            height: 150px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #4a4a4a;
+        }
+
+        /* 1. Standard CSS Approach (Current) */
+        .sculpted-css {
+            background-color: #e0e5ec;
+            box-shadow:
+                9px 9px 16px rgb(163, 177, 198, 0.6),
+                -9px -9px 16px rgba(255, 255, 255, 0.5);
+        }
+
+        /* 2. SVG Filter Approach (Physically Based Lighting) */
+        /* Note: We apply the filter to the element */
+        .sculpted-pbr {
+            background-color: #e0e5ec;
+            /* Base color still needed */
+            filter: url(#pbr-neumorph);
+        }
+
+        /* 3. PBR with Pressed State */
+        .sculpted-pbr-pressed {
+            background-color: #e0e5ec;
+            filter: url(#pbr-neumorph-pressed);
+        }
+
+        .label {
+            margin-top: 15px;
+            text-align: center;
+            color: #666;
+        }
+
+        .demo-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Neumorphism Rendering Comparison</h1>
+
+    <div class="container">
+        <!-- Standard -->
+        <div class="demo-group">
+            <div class="box sculpted-css">CSS</div>
+            <div class="label">Standard Box-Shadow<br>(Current)</div>
+        </div>
+
+        <!-- PBR -->
+        <div class="demo-group">
+            <div class="box sculpted-pbr">SVG PBR</div>
+            <div class="label">SVG Specular Lighting<br>(Physically Calculated)</div>
+        </div>
+
+        <!-- PBR Pressed -->
+        <div class="demo-group">
+            <div class="box sculpted-pbr-pressed">Pressed</div>
+            <div class="label">PBR Inset/Pressed</div>
+        </div>
+    </div>
+
+    <!-- SVG Filters Definition -->
+    <svg width="0" height="0" style="position: absolute; display: block;">
+        <defs>
+            <!-- FILTER 1: EXTRUDED (Button Up) -->
+            <filter id="pbr-neumorph" x="-50%" y="-50%" width="200%" height="200%">
+                <!-- 1. Create the Height Map (Alpha Channel) -->
+                <!-- We use the SourceAlpha (the shape of the div) -->
+                <feGaussianBlur in="SourceAlpha" stdDeviation="8" result="blur" />
+
+                <!-- 2. Lighting Calculation (Specular) -->
+                <!-- surfaceScale controls "depth", constant "specularConstant" controls shininess -->
+                <feSpecularLighting in="blur" surfaceScale="5" specularConstant="1" specularExponent="20"
+                    lighting-color="#ffffff" result="specOut">
+                    <!-- Light Source Position: Top Left (negative X/Y implies coming from top-left) -->
+                    <!-- Z determines "height" of light. Higher Z = softer shadows. -->
+                    <fePointLight x="-5000" y="-5000" z="5000" />
+                </feSpecularLighting>
+
+                <!-- 3. Lighting Calculation (Diffuse/Shadow) - Simulating the dark side -->
+                <!-- Actually, standard CSS shadows handle the "ambient occlusion" better for the dark side. 
+                     SVG lighting is additive (light), creating shadows is tricky (subtracting light).
+                     Hybrid approach: Use SVG for the "Highlight" (Plastic shine) and standard logic for shadow?
+                     Let's try a pure SVG compositing approach first. -->
+
+                <!-- Creating the "Dark" shadow offset -->
+                <feOffset in="blur" dx="8" dy="8" result="offsetBlur" />
+                <feComposite in="offsetBlur" in2="SourceAlpha" operator="out" result="outerShadow" />
+                <feFlood flood-color="#a3b1c6" flood-opacity="0.6" result="shadowColor" />
+                <feComposite in="shadowColor" in2="outerShadow" operator="in" result="coloredShadow" />
+
+                <!-- Creating the "Light" highlight offset -->
+                <feOffset in="blur" dx="-8" dy="-8" result="offsetBlurLight" />
+                <feComposite in="offsetBlurLight" in2="SourceAlpha" operator="out" result="outerHighlight" />
+                <feFlood flood-color="#ffffff" flood-opacity="0.8" result="highlightColor" />
+                <feComposite in="highlightColor" in2="outerHighlight" operator="in" result="coloredHighlight" />
+
+                <!-- 4. Composite everything -->
+                <feMerge>
+                    <feMergeNode in="coloredShadow" />
+                    <feMergeNode in="coloredHighlight" />
+                    <feMergeNode in="SourceGraphic" /> <!-- The Base Element -->
+                    <!-- We can overlay the Specular shine ON TOP of the element for that "plastic" feel -->
+                    <!-- Note: Specular is usually added. -->
+                    <!-- Let's try limiting specular to the edges using the blur map inverse? -->
+                </feMerge>
+
+                <!-- ADVANCED: Actually using the specular map effectively -->
+                <!-- The bump map generated from blur is usually inverted for 'raised' elements in standard 3D. -->
+                <!-- Let's stick to the CSS-like compositing above for the base, it's safer. -->
+            </filter>
+
+            <!-- FILTER 2: PRESSED (Button Down) -->
+            <filter id="pbr-neumorph-pressed">
+                <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="blur" />
+                <feOffset dx="5" dy="5" result="offsetBlur" />
+                <feComposite in="offsetBlur" in2="SourceAlpha" operator="in" result="innerShadow" />
+                <feFlood flood-color="#a3b1c6" flood-opacity="0.7" />
+                <feComposite operator="in" in2="innerShadow" result="finalShadow" />
+
+                <feOffset dx="-5" dy="-5" in="blur" result="offsetBlurLight" />
+                <feComposite in="offsetBlurLight" in2="SourceAlpha" operator="in" result="innerHighlight" />
+                <feFlood flood-color="#ffffff" flood-opacity="1" />
+                <feComposite operator="in" in2="innerHighlight" result="finalHighlight" />
+
+                <feMerge>
+                    <feMergeNode in="SourceGraphic" />
+                    <feMergeNode in="finalShadow" />
+                    <feMergeNode in="finalHighlight" />
+                </feMerge>
+            </filter>
+        </defs>
+    </svg>
+
+    <div style="margin-top: 50px; max-width: 600px; text-align: center; color: #555;">
+        <p><strong>Note:</strong> SVG Filters calculate pixel-by-pixel transparency and offset.</p>
+        <p>While "feSpecularLighting" exists, it often creates a "chrome" or "metallic" look rather than soft plastic.
+        </p>
+        <p>The "SVG PBR" box above uses discrete filter primitives to mimic the CSS approach but with potentially more
+            complex compositing control (e.g. masking shadow exactly to outside).</p>
+    </div>
+
+</body>
+
+</html>
