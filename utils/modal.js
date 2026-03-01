@@ -10,6 +10,7 @@ export function showListModal(lists, current, messageDiv, onUpdate, actionCallba
     modalOverlay.className = 'modal-overlay';
 
     modalOverlay.onclick = (e) => {
+        e.stopPropagation();
         if (e.target === modalOverlay) {
             modalOverlay.remove();
         }
