@@ -187,6 +187,12 @@ body.dark.neumorphic .video-link:hover {
     color: #ff6666;
 }
 
+body.dark.neumorphic .dropdown-menu {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
 body.dark.neumorphic .menu-list-container {
     background-color: #2a2d32;
     box-shadow: 8px 8px 16px #1e2024, -8px -8px 16px #363a40;

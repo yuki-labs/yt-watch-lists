@@ -140,12 +140,20 @@ function closeAllMenus() {
                 // Remove transform instantly and scroll DOWN to keep header visually in place.
 
                 // 1. Remove transforms instantly
-                const elementsToReset = document.querySelectorAll('.header, .button-group, .search-container, #message, h2, .video-item');
+                const elementsToReset = document.querySelectorAll('.header, .button-group, .search-container, #message, h2, #settings-panel, .video-item');
                 elementsToReset.forEach(el => {
                     el.classList.remove('shift-up');
                     el.style.transition = 'none';
                     el.style.transform = '';
                 });
+                // Reset video list container expansion
+                const videoList = document.getElementById('video-list');
+                if (videoList) {
+                    videoList.classList.remove('shift-up');
+                    videoList.style.transition = 'none';
+                    videoList.style.marginTop = '';
+                    videoList.style.paddingTop = '';
+                }
 
                 // 2. Adjust scroll
                 const originalBehavior = container.style.scrollBehavior;
@@ -162,38 +170,56 @@ function closeAllMenus() {
             } else {
                 // ANIMATED CLOSE (User is scrolled down):
                 // Allow the CSS transition to play (header slides UP/DOWN naturally)
-                const elementsToReset = document.querySelectorAll('.header.shift-up, .button-group.shift-up, .search-container.shift-up, #message.shift-up, h2.shift-up, .video-item.shift-up, .video-item');
+                const elementsToReset = document.querySelectorAll('.header.shift-up, .button-group.shift-up, .search-container.shift-up, #message.shift-up, h2.shift-up, #settings-panel.shift-up, .video-item.shift-up, .video-item');
                 elementsToReset.forEach(el => {
                     el.classList.remove('shift-up');
-                    // Explicitly enforce transition to guarantee animation
                     el.style.transition = 'transform 0.25s ease';
                     el.style.transform = '';
-
-                    // Clean up inline transition after animation
                     setTimeout(() => {
-                        if (!el.style.transform) { // Only clear if no new transform applied
-                            el.style.transition = '';
-                        }
+                        if (!el.style.transform) el.style.transition = '';
                     }, 300);
                 });
+                // Animate video list container back
+                const videoList = document.getElementById('video-list');
+                if (videoList) {
+                    videoList.classList.remove('shift-up');
+                    videoList.style.transition = 'margin-top 0.25s ease, padding-top 0.25s ease';
+                    videoList.style.marginTop = '';
+                    videoList.style.paddingTop = '';
+                    setTimeout(() => { videoList.style.transition = ''; }, 300);
+                }
             }
         } else {
             // Fallback for neumorphic but no shift detected (clean up anyway)
-            const elementsToReset = document.querySelectorAll('.header.shift-up, .button-group.shift-up, .search-container.shift-up, #message.shift-up, h2.shift-up, .video-item.shift-up, .video-item');
+            const elementsToReset = document.querySelectorAll('.header.shift-up, .button-group.shift-up, .search-container.shift-up, #message.shift-up, h2.shift-up, #settings-panel.shift-up, .video-item.shift-up, .video-item');
             elementsToReset.forEach(el => {
                 el.classList.remove('shift-up');
                 el.style.transform = '';
                 el.style.transition = '';
             });
+            const videoList = document.getElementById('video-list');
+            if (videoList) {
+                videoList.classList.remove('shift-up');
+                videoList.style.marginTop = '';
+                videoList.style.paddingTop = '';
+                videoList.style.transition = '';
+            }
         }
     } else {
         // Normal reset (non-neumorphic)
-        const elementsToReset = document.querySelectorAll('.header.shift-up, .button-group.shift-up, .search-container.shift-up, #message.shift-up, h2.shift-up, .video-item.shift-up, .video-item');
+        const elementsToReset = document.querySelectorAll('.header.shift-up, .button-group.shift-up, .search-container.shift-up, #message.shift-up, h2.shift-up, #settings-panel.shift-up, .video-item.shift-up, .video-item');
         elementsToReset.forEach(el => {
             el.classList.remove('shift-up');
             el.style.transform = '';
             el.style.transition = '';
         });
+        const videoList = document.getElementById('video-list');
+        if (videoList) {
+            videoList.classList.remove('shift-up');
+            videoList.style.marginTop = '';
+            videoList.style.paddingTop = '';
+            videoList.style.transition = '';
+        }
     }
 
     // Remove scroll handler if it exists
@@ -330,6 +356,7 @@ function createVideoItem(video, removeCallback, moveCallback, editCallback, move
         pageItems.forEach(opt => {
             const btn = document.createElement('button');
             btn.className = 'dropdown-item';
+            btn.title = opt.label;
             if (opt.isDelete) btn.classList.add('delete-item');
             const iconSpan = document.createElement('span');
             iconSpan.className = 'menu-icon';
@@ -437,7 +464,7 @@ function createVideoItem(video, removeCallback, moveCallback, editCallback, move
 
                     const prevSibling = li.previousElementSibling;
                     const isTopItem = !prevSibling || !prevSibling.classList.contains('video-item');
-                    const staticElements = document.querySelectorAll('header, .button-group, .search-container, #message, h2');
+                    const staticElements = document.querySelectorAll('header, .button-group, .search-container, #message, h2, #settings-panel');
                     console.log('Is top item:', isTopItem, 'Static elements found:', staticElements.length);
 
                     if (isTopItem) {
@@ -457,18 +484,35 @@ function createVideoItem(video, removeCallback, moveCallback, editCallback, move
                             console.log('Current gap:', currentGapAbove, 'Exact shift needed:', exactShift);
 
                             if (exactShift > 0) {
+                                // Calculate how much to expand the video list container
+                                // Goal: gap above dropdown (container inner top → dropdown top) = gap below (dropdown bottom → card top)
+                                const videoList = document.getElementById('video-list');
+                                const videoListRect = videoList ? videoList.getBoundingClientRect() : null;
+                                const liRect = li.getBoundingClientRect();
+                                // Gap below = distance from dropdown bottom to the video card's top edge
+                                const gapBelow = Math.abs(liRect.top - dropdownRect.bottom);
+                                // Current gap above = dropdown top to container inner top edge
+                                const currentGapAbove = videoListRect ? (dropdownRect.top - videoListRect.top) : 0;
+                                // We want the new gap above = gapBelow, so expansion = gapBelow - currentGapAbove
+                                const listExpansion = Math.max(exactShift, gapBelow - currentGapAbove);
+
                                 // Pure CSS animation - just apply transforms with transition
-                                // Spacer already exists (permanent in neumorphic mode), no DOM changes needed
                                 staticElements.forEach(el => {
                                     el.classList.add('shift-up');
                                     el.style.transition = 'transform 0.25s ease';
-                                    el.style.transform = `translateY(-${exactShift}px)`;
-                                    // Store shift amount on element for reliable retrieval during close
+                                    el.style.transform = `translateY(-${listExpansion}px)`;
                                     if (el.tagName === 'HEADER') {
-                                        el.dataset.shiftAmount = exactShift;
+                                        el.dataset.shiftAmount = listExpansion;
                                     }
                                 });
-                                console.log('Applied shift:', exactShift);
+                                // Expand the video list container upward
+                                if (videoList) {
+                                    videoList.classList.add('shift-up');
+                                    videoList.style.transition = 'margin-top 0.25s ease, padding-top 0.25s ease';
+                                    videoList.style.marginTop = `-${listExpansion}px`;
+                                    videoList.style.paddingTop = `${16 + listExpansion}px`;
+                                }
+                                console.log('Applied shift:', listExpansion, 'gapBelow:', gapBelow, 'currentGapAbove:', currentGapAbove);
                             } else {
                                 console.log('No shift needed (exactShift <= 0)');
                             }

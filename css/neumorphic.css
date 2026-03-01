@@ -9,6 +9,7 @@ body.neumorphic {
 
 body.neumorphic .button-group {
     padding: 0 10px;
+    margin-top: 12px;
 }
 
 body.neumorphic .header {
@@ -17,6 +18,8 @@ body.neumorphic .header {
     position: relative;
     z-index: 1002;
     transition: box-shadow 0.25s ease, transform 0.25s ease;
+    margin-bottom: 0;
+    border-bottom: none;
 }
 
 body.neumorphic #video-list {
@@ -25,6 +28,13 @@ body.neumorphic #video-list {
     border-radius: 15px;
     padding: 16px;
     margin: 0 -4px;
+    overflow: visible;
+}
+
+body.neumorphic .dropdown-menu {
+    background: transparent;
+    border: none;
+    box-shadow: none;
 }
 
 /* 1. CARDS (Video Items) - Convex (Pop Out) */
