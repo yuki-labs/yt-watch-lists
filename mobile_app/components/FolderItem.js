@@ -30,6 +30,7 @@ export default function FolderItem({ folder, onToggle, onChildMenu, theme, color
     };
 
     const collapsed = folder.collapsed !== false;
+    const pillText = `${collapsed ? '▶' : '▼'} ${folder.children.length} video${folder.children.length !== 1 ? 's' : ''}`;
 
     // ─── Neumorphic layout ───
     if (isNeumorphic) {
@@ -54,25 +55,26 @@ export default function FolderItem({ folder, onToggle, onChildMenu, theme, color
                     onPress={handleToggle}
                     activeOpacity={0.85}
                 >
-                    <View style={[styles.neuThumbnailWrapper, { boxShadow: neuThumbShadow }]}>
-                        <Image
-                            source={{ uri: folder.thumbnail }}
-                            style={styles.neuThumbnail}
-                            resizeMode="cover"
-                        />
+                    {/* Thumbnail + Pill */}
+                    <View style={styles.thumbWrap}>
+                        <View style={[styles.neuThumbnailWrapper, { boxShadow: neuThumbShadow }]}>
+                            <Image
+                                source={{ uri: folder.thumbnail }}
+                                style={styles.neuThumbnail}
+                                resizeMode="cover"
+                            />
+                        </View>
+                        <View style={[styles.pill, { backgroundColor: `${nc.shadowDark}0.12)` }]}>
+                            <Text style={[styles.pillText, { color: nc.text }]}>{pillText}</Text>
+                        </View>
                     </View>
                     <View style={styles.neuInfo}>
                         <Text style={[styles.neuTitle, { color: nc.text }]} numberOfLines={2}>{folder.title}</Text>
-                        <Text style={[styles.neuUrl, { color: nc.textSecondary }]}>
-                            {folder.children.length} video{folder.children.length !== 1 ? 's' : ''} • Tap to {collapsed ? 'expand' : 'collapse'}
-                        </Text>
                     </View>
                     <View
-                        style={styles.neuChevron}
+                        style={styles.dragHandle}
                         {...(dragHandlers || {})}
-                    >
-                        <Text style={[styles.chevronIcon, { color: nc.text }]}>{collapsed ? '▶' : '▼'}</Text>
-                    </View>
+                    />
                 </TouchableOpacity>
 
                 {/* Children (expanded) */}
@@ -125,11 +127,17 @@ export default function FolderItem({ folder, onToggle, onChildMenu, theme, color
                 onPress={handleToggle}
                 activeOpacity={0.8}
             >
-                <Image
-                    source={{ uri: folder.thumbnail }}
-                    style={styles.m3Thumbnail}
-                    resizeMode="cover"
-                />
+                {/* Thumbnail + Pill */}
+                <View style={styles.m3ThumbWrap}>
+                    <Image
+                        source={{ uri: folder.thumbnail }}
+                        style={styles.m3Thumbnail}
+                        resizeMode="cover"
+                    />
+                    <View style={[styles.pill, { backgroundColor: colors.surfaceContainerHighest }]}>
+                        <Text style={[styles.pillText, { color: colors.onSurfaceVariant }]}>{pillText}</Text>
+                    </View>
+                </View>
                 <View style={styles.m3Info}>
                     <Text
                         variant="titleSmall"
@@ -138,17 +146,8 @@ export default function FolderItem({ folder, onToggle, onChildMenu, theme, color
                     >
                         {folder.title}
                     </Text>
-                    <Text
-                        variant="bodySmall"
-                        style={{ color: colors.onSurfaceVariant }}
-                        numberOfLines={1}
-                    >
-                        {folder.children.length} video{folder.children.length !== 1 ? 's' : ''} • Tap to {collapsed ? 'expand' : 'collapse'}
-                    </Text>
                 </View>
-                <View {...(dragHandlers || {})} style={styles.m3MenuBtn}>
-                    <Text style={[styles.chevronIcon, { color: colors.onSurfaceVariant }]}>{collapsed ? '▶' : '▼'}</Text>
-                </View>
+                <View {...(dragHandlers || {})} style={styles.dragHandle} />
             </TouchableOpacity>
 
             {/* Children (expanded) */}
@@ -209,9 +208,26 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: 'bold',
     },
-    chevronIcon: {
-        fontSize: 14,
-        fontWeight: 'bold',
+    thumbWrap: {
+        alignItems: 'center',
+    },
+    m3ThumbWrap: {
+        alignItems: 'center',
+    },
+    pill: {
+        marginTop: 4,
+        paddingHorizontal: 10,
+        paddingVertical: 2,
+        borderRadius: 10,
+        alignSelf: 'center',
+    },
+    pillText: {
+        fontSize: 10,
+        fontWeight: '600',
+    },
+    dragHandle: {
+        width: 24,
+        height: 40,
     },
     childItem: {
         flexDirection: 'row',
@@ -250,7 +266,6 @@ const styles = StyleSheet.create({
         width: 140,
         height: 80,
         borderTopLeftRadius: 20,
-        borderBottomLeftRadius: 20,
     },
     m3Info: {
         flex: 1,
@@ -261,12 +276,6 @@ const styles = StyleSheet.create({
     m3Title: {
         fontWeight: '600',
         marginBottom: 4,
-    },
-    m3MenuBtn: {
-        width: 40,
-        height: 40,
-        justifyContent: 'center',
-        alignItems: 'center',
     },
     m3ChildrenContainer: {
         borderBottomLeftRadius: 20,
@@ -301,17 +310,6 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         lineHeight: 20,
         marginBottom: 4,
-    },
-    neuUrl: {
-        fontSize: 11,
-        lineHeight: 15,
-    },
-    neuChevron: {
-        borderRadius: 20,
-        width: 38,
-        height: 38,
-        alignItems: 'center',
-        justifyContent: 'center',
     },
     childrenContainer: {
         marginTop: 10,

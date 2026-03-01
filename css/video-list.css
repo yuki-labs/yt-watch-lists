@@ -146,24 +146,39 @@
     gap: 12px;
 }
 
+.folder-header .video-info {
+    margin-right: 0;
+}
+
 .folder-title {
     font-weight: 700;
     font-size: 1rem;
     color: #333;
 }
 
-.folder-subtitle {
-    font-size: 0.8rem;
-    color: #888;
-    margin-top: 2px;
+.folder-thumb-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    margin-right: 15px;
 }
 
-.folder-chevron {
-    position: static;
-    font-size: 16px;
-    padding: 8px 12px;
-    color: #666;
-    flex-shrink: 0;
+.folder-thumb-wrap .video-thumbnail {
+    margin-right: 0;
+}
+
+.folder-pill {
+    margin-top: 4px;
+    padding: 2px 10px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.06);
+    color: #555;
+    font-size: 0.7rem;
+    font-weight: 600;
+    white-space: nowrap;
+    text-align: center;
+    cursor: pointer;
 }
 
 .folder-children {

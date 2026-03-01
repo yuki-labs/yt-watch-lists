@@ -186,9 +186,21 @@ function createFolderItem(folder, removeCallback, moveCallback, editCallback, mo
     const header = document.createElement('div');
     header.className = 'folder-header';
 
+    // Thumbnail + pill wrapper
+    const thumbWrap = document.createElement('div');
+    thumbWrap.className = 'folder-thumb-wrap';
+
     const img = document.createElement('img');
     img.src = folder.thumbnail || '';
     img.className = 'video-thumbnail';
+
+    const pill = document.createElement('div');
+    pill.className = 'folder-pill';
+    const collapsed = folder.collapsed !== false;
+    pill.textContent = `${collapsed ? '▶' : '▼'} ${folder.children.length} video${folder.children.length !== 1 ? 's' : ''}`;
+
+    thumbWrap.appendChild(img);
+    thumbWrap.appendChild(pill);
 
     const infoDiv = document.createElement('div');
     infoDiv.className = 'video-info';
@@ -200,24 +212,14 @@ function createFolderItem(folder, removeCallback, moveCallback, editCallback, mo
     titleEl.textContent = folder.title;
     titleContainer.appendChild(titleEl);
 
-    const subtitle = document.createElement('div');
-    subtitle.className = 'folder-subtitle';
-    subtitle.textContent = `${folder.children.length} video${folder.children.length !== 1 ? 's' : ''}`;
-
     infoDiv.appendChild(titleContainer);
-    infoDiv.appendChild(subtitle);
 
-    const chevron = document.createElement('button');
-    chevron.className = 'menu-btn folder-chevron';
-    chevron.textContent = folder.collapsed !== false ? '▶' : '▼';
-
-    header.appendChild(img);
+    header.appendChild(thumbWrap);
     header.appendChild(infoDiv);
-    header.appendChild(chevron);
 
     const childrenDiv = document.createElement('div');
     childrenDiv.className = 'folder-children';
-    if (folder.collapsed !== false) {
+    if (collapsed) {
         childrenDiv.style.display = 'none';
     }
 
@@ -227,8 +229,8 @@ function createFolderItem(folder, removeCallback, moveCallback, editCallback, mo
         e.stopPropagation();
         const isCollapsed = childrenDiv.style.display === 'none';
         childrenDiv.style.display = isCollapsed ? 'block' : 'none';
-        chevron.textContent = isCollapsed ? '▼' : '▶';
         li._folderData.collapsed = !isCollapsed;
+        pill.textContent = `${isCollapsed ? '▼' : '▶'} ${li._folderData.children.length} video${li._folderData.children.length !== 1 ? 's' : ''}`;
     });
 
     li.appendChild(header);
@@ -240,8 +242,11 @@ function updateFolderItem(li, folder, removeCallback, moveCallback, editCallback
     li._folderData = folder;
     const titleEl = li.querySelector('.folder-title');
     if (titleEl && titleEl.textContent !== folder.title) titleEl.textContent = folder.title;
-    const subtitle = li.querySelector('.folder-subtitle');
-    if (subtitle) subtitle.textContent = `${folder.children.length} video${folder.children.length !== 1 ? 's' : ''}`;
+    const pill = li.querySelector('.folder-pill');
+    if (pill) {
+        const collapsed = folder.collapsed !== false;
+        pill.textContent = `${collapsed ? '▶' : '▼'} ${folder.children.length} video${folder.children.length !== 1 ? 's' : ''}`;
+    }
     const childrenDiv = li.querySelector('.folder-children');
     if (childrenDiv) renderFolderChildren(childrenDiv, folder, removeCallback, moveCallback, editCallback, moveToListCallback, addToFolderCallback);
 }
