@@ -273,5 +273,13 @@ function getDeletedVideos() {
     return currentDeletedVideos;
 }
 
-module.exports = { startServer, updateVideos, getDeletedVideos, addTombstone };
+function stopServer() {
+    if (serverInstance) {
+        serverInstance.close(() => {
+            console.log('Server stopped');
+        });
+        serverInstance = null;
+    }
+}
 
+module.exports = { startServer, updateVideos, getDeletedVideos, addTombstone, stopServer };

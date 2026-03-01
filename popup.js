@@ -322,9 +322,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const moveResult = await import('./utils/sync.js').then(m => m.moveVideo(videoId, targetList));
                 if (moveResult.success) {
                     showMessage(`Moved video to ${targetList}`, 'success', messageDiv);
-                    // Update local list (remove moved video) and persist to storage + sync
+                    // Update local list and persist to storage
+                    // Server already updated by POST /lists/move, no need to sync back
                     allVideos = allVideos.filter(v => v.id !== videoId);
-                    await saveAndSync(allVideos);
+                    await chrome.storage.local.set({ _syncFromServer: Date.now() });
+                    await saveVideos(allVideos);
+                    setTimeout(() => chrome.storage.local.remove('_syncFromServer'), 1000);
                     render();
                 } else {
                     showMessage('Error moving video: ' + moveResult.error, 'error', messageDiv);

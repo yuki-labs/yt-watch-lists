@@ -1,6 +1,6 @@
 const { app, BrowserWindow, ipcMain, dialog, Tray, Menu } = require('electron');
 const { loadConfig, saveConfig } = require('./config');
-const { startServer, updateVideos, getDeletedVideos, addTombstone } = require('./server');
+const { startServer, updateVideos, getDeletedVideos, addTombstone, stopServer } = require('./server');
 const path = require('path');
 
 let mainWindow;
@@ -22,11 +22,33 @@ function createWindow() {
     mainWindow.loadFile('index.html');
 
     mainWindow.on('close', (event) => {
-        if (!isQuitting) {
-            event.preventDefault();
-            mainWindow.hide();
-            return false;
-        }
+        if (isQuitting) return; // Already confirmed quit
+
+        event.preventDefault();
+
+        dialog.showMessageBox(mainWindow, {
+            type: 'question',
+            buttons: ['Minimize to Tray', 'Quit', 'Cancel'],
+            defaultId: 0,
+            cancelId: 2,
+            title: 'Close Watch Later',
+            message: 'What would you like to do?',
+            detail: 'Minimizing to tray keeps the sync server running for the browser extension and mobile app.'
+        }).then(({ response }) => {
+            if (response === 0) {
+                // Minimize to tray
+                mainWindow.hide();
+            } else if (response === 1) {
+                // Quit completely
+                isQuitting = true;
+                app.quit();
+            }
+            // response === 2 (Cancel) — do nothing
+        });
+    });
+
+    mainWindow.on('closed', () => {
+        mainWindow = null;
     });
 
     mainWindow.webContents.on('did-finish-load', () => {
@@ -321,6 +343,7 @@ app.whenReady().then(() => {
 
 app.on('before-quit', () => {
     isQuitting = true;
+    stopServer();
 });
 
 // IPC Handlers
