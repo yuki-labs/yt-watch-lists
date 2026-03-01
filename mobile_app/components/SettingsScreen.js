@@ -310,6 +310,33 @@ export default function SettingsScreen({ onSave, onBack, theme, colorScheme }) {
                         />
                     </Animated.View>
 
+                    {/* Auto Discover inline (initial setup only) */}
+                    {!onBack && (
+                        scanning ? (
+                            <View style={[styles.scanningContainer, { marginBottom: 10 }]}>
+                                <ActivityIndicator size="small" color={isNeu ? nc.accent : colors.primary} />
+                                <Animated.Text style={[styles.scanningText, { color: subtitleColor }]}>
+                                    {scanProgress}
+                                </Animated.Text>
+                            </View>
+                        ) : (
+                            <TouchableOpacity activeOpacity={0.7} onPress={handleAutoDiscover} style={{ marginBottom: 10 }}>
+                                <Animated.View style={[
+                                    styles.btn,
+                                    {
+                                        backgroundColor: secondaryBtnBg,
+                                        borderRadius: btnRadius,
+                                        boxShadow: currentBtnShadow,
+                                    }
+                                ]}>
+                                    <Animated.Text style={[styles.btnText, { color: secondaryBtnTextColor }]}>
+                                        🔍  Auto Discover Server
+                                    </Animated.Text>
+                                </Animated.View>
+                            </TouchableOpacity>
+                        )
+                    )}
+
                     {/* Button row: Test + Save */}
                     <View style={styles.buttonRow}>
                         <TouchableOpacity activeOpacity={0.7} onPress={handleTestConnection} style={styles.buttonHalf} disabled={testing}>
@@ -410,32 +437,34 @@ export default function SettingsScreen({ onSave, onBack, theme, colorScheme }) {
                     </View>
                 </Animated.View>
 
-                {/* ── Auto Discover Card ── */}
-                <Animated.View style={[styles.card, cardAnimStyle, { boxShadow: currentCardShadow }]}>
-                    {scanning ? (
-                        <View style={styles.scanningContainer}>
-                            <ActivityIndicator size="small" color={isNeu ? nc.accent : colors.primary} />
-                            <Animated.Text style={[styles.scanningText, { color: subtitleColor }]}>
-                                {scanProgress}
-                            </Animated.Text>
-                        </View>
-                    ) : (
-                        <TouchableOpacity activeOpacity={0.7} onPress={handleAutoDiscover}>
-                            <Animated.View style={[
-                                styles.btn,
-                                {
-                                    backgroundColor: secondaryBtnBg,
-                                    borderRadius: btnRadius,
-                                    boxShadow: currentBtnShadow,
-                                }
-                            ]}>
-                                <Animated.Text style={[styles.btnText, { color: secondaryBtnTextColor }]}>
-                                    🔍  Auto Discover Server
+                {/* ── Auto Discover Card (settings page only) ── */}
+                {onBack && (
+                    <Animated.View style={[styles.card, cardAnimStyle, { boxShadow: currentCardShadow }]}>
+                        {scanning ? (
+                            <View style={styles.scanningContainer}>
+                                <ActivityIndicator size="small" color={isNeu ? nc.accent : colors.primary} />
+                                <Animated.Text style={[styles.scanningText, { color: subtitleColor }]}>
+                                    {scanProgress}
                                 </Animated.Text>
-                            </Animated.View>
-                        </TouchableOpacity>
-                    )}
-                </Animated.View>
+                            </View>
+                        ) : (
+                            <TouchableOpacity activeOpacity={0.7} onPress={handleAutoDiscover}>
+                                <Animated.View style={[
+                                    styles.btn,
+                                    {
+                                        backgroundColor: secondaryBtnBg,
+                                        borderRadius: btnRadius,
+                                        boxShadow: currentBtnShadow,
+                                    }
+                                ]}>
+                                    <Animated.Text style={[styles.btnText, { color: secondaryBtnTextColor }]}>
+                                        🔍  Auto Discover Server
+                                    </Animated.Text>
+                                </Animated.View>
+                            </TouchableOpacity>
+                        )}
+                    </Animated.View>
+                )}
             </ScrollView>
         </Animated.View>
     );
