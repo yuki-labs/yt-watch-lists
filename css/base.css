@@ -45,6 +45,11 @@ body.neumorphic #scroll-spacer {
     height: 100px;
 }
 
+/* Ensure content is always tall enough to scroll past the spacer, even with short lists */
+body.neumorphic main {
+    min-height: 100%;
+}
+
 header {
     display: flex;
     justify-content: space-between;

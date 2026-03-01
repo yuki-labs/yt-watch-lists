@@ -64,7 +64,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const container = document.querySelector('.container');
         const scrollSpacer = document.getElementById('scroll-spacer');
         if (container && scrollSpacer && document.body.classList.contains('neumorphic')) {
-            // Use requestAnimationFrame to ensure layout is complete
             requestAnimationFrame(() => {
                 container.scrollTop = scrollSpacer.offsetHeight;
             });
