@@ -2,32 +2,29 @@
 .settings-cog {
     background: none;
     border: none;
-    font-size: 1.4rem;
     cursor: pointer;
-    padding: 4px 8px;
+    padding: 6px;
     border-radius: 50%;
-    transition: transform 0.3s ease, background-color 0.2s ease;
-    line-height: 1;
+    line-height: 0;
+    color: #555;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .settings-cog:hover {
-    transform: rotate(90deg);
     background-color: rgba(0, 0, 0, 0.05);
-}
-
-.settings-cog.active {
-    transform: rotate(180deg);
 }
 
 .settings-panel {
     background-color: #f8f8f8;
     border: 1px solid #eee;
     border-radius: 10px;
-    padding: 6px;
+    padding: 6px 12px;
     margin-bottom: 12px;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 6px;
     animation: settingsSlideIn 0.2s ease;
 }
 
@@ -47,7 +44,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 10px 14px;
+    padding: 7px 14px;
     background: none;
     border: none;
     border-radius: 8px;

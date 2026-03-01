@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const darkIcon = darkToggle.querySelector('.settings-icon');
         const updateDarkState = () => {
             const isDark = document.body.classList.contains('dark');
-            if (darkIcon) darkIcon.textContent = isDark ? '☀️' : '🌙';
+            if (darkIcon) darkIcon.textContent = isDark ? '🌗' : '🌗';
         };
         updateDarkState();
         darkToggle.addEventListener('click', () => {
