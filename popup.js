@@ -492,10 +492,22 @@ document.addEventListener('DOMContentLoaded', async () => {
             const result = await getLists();
             if (result.success) {
                 const filteredLists = result.lists.filter(f => !f.endsWith('_tombstones.json'));
-                showListModal(filteredLists, result.current, messageDiv, async (videos) => {
+                showListModal(filteredLists, result.current, messageDiv, async (videos, timestamp) => {
                     allVideos = videos;
-                    // Persist to chrome.storage so reopening popup shows correct list
-                    await saveVideos(allVideos);
+                    // Set flag to prevent background auto-sync from pushing old data back
+                    await chrome.storage.local.set({ _syncFromServer: Date.now() });
+                    // Save with the server's timestamp so timestamps match
+                    await saveVideos(allVideos, timestamp || Date.now());
+                    // Update synced version so background poller doesn't re-fetch
+                    try {
+                        const statusResp = await fetch('http://127.0.0.1:5000/status');
+                        if (statusResp.ok) {
+                            const status = await statusResp.json();
+                            await chrome.storage.local.set({ lastSyncedVersion: status.version });
+                        }
+                    } catch (e) { /* ignore */ }
+                    // Clear flag after delay
+                    setTimeout(() => chrome.storage.local.remove('_syncFromServer'), 1000);
                     render();
                 });
             } else {

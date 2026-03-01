@@ -49,11 +49,18 @@ export function showListModal(lists, current, messageDiv, onUpdate, actionCallba
                     if (messageDiv) showMessage(`Switched to ${filename}`, 'success', messageDiv);
                     const remoteData = await fetchRemoteVideos();
                     if (onUpdate) {
-                        // Extract videos array from response ({ videos, timestamp, deletedVideos })
-                        const videos = remoteData
-                            ? (Array.isArray(remoteData) ? remoteData : (remoteData.videos || []))
-                            : [];
-                        onUpdate(videos);
+                        // Extract videos array and timestamp from response
+                        let videos = [];
+                        let timestamp = 0;
+                        if (remoteData) {
+                            if (Array.isArray(remoteData)) {
+                                videos = remoteData;
+                            } else {
+                                videos = remoteData.videos || [];
+                                timestamp = remoteData.timestamp || 0;
+                            }
+                        }
+                        await onUpdate(videos, timestamp);
                     }
                 }
                 modalOverlay.remove();
