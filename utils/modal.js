@@ -41,15 +41,13 @@ export function showListModal(lists, current, messageDiv, onUpdate, actionCallba
                 if (actionCallback) {
                     await actionCallback(filename);
                 } else if (filename !== current) {
-                    if (messageDiv) showMessage(`[1] Switching to ${filename}...`, 'success', messageDiv);
                     const switchResult = await switchList(filename);
-                    if (messageDiv) showMessage(`[2] Switch result: ${JSON.stringify(switchResult)}`, 'success', messageDiv);
                     if (switchResult && switchResult.success === false) {
                         if (messageDiv) showMessage('Switch failed: ' + (switchResult.error || 'Unknown error'), 'error', messageDiv);
                         return;
                     }
+                    if (messageDiv) showMessage(`Switched to ${filename}`, 'success', messageDiv);
                     const remoteData = await fetchRemoteVideos();
-                    if (messageDiv) showMessage(`[3] Fetched ${remoteData ? (remoteData.videos ? remoteData.videos.length : 'raw:' + (Array.isArray(remoteData) ? remoteData.length : typeof remoteData)) : 'NULL'} videos`, 'success', messageDiv);
                     if (onUpdate) {
                         // Extract videos array and timestamp from response
                         let videos = [];
@@ -62,9 +60,7 @@ export function showListModal(lists, current, messageDiv, onUpdate, actionCallba
                                 timestamp = remoteData.timestamp || 0;
                             }
                         }
-                        if (messageDiv) showMessage(`[4] Calling onUpdate with ${videos.length} videos, ts=${timestamp}`, 'success', messageDiv);
                         await onUpdate(videos, timestamp);
-                        if (messageDiv) showMessage(`[5] onUpdate complete`, 'success', messageDiv);
                     }
                 }
                 modalOverlay.remove();
