@@ -25,6 +25,7 @@ import VideoItem from './VideoItem';
 import MenuModal from './MenuModal';
 import EditTitleModal from './EditTitleModal';
 import AddVideoModal from './AddVideoModal';
+import FolderItem from './FolderItem';
 import { getColors, getNeuColors, getNeuShadows } from '../theme/m3Theme';
 
 // ── CrossFadeIcon: fades between icons when the name changes ──
@@ -239,6 +240,19 @@ export default function HomeScreen({ onSettings, theme, colorScheme, onToggleCol
                     await syncAndUpdate(newVideos);
                 }
                 break;
+            case 'folder': {
+                const folder = {
+                    type: 'folder',
+                    id: 'folder_' + Date.now(),
+                    title: '📁 ' + video.title,
+                    thumbnail: video.thumbnail,
+                    children: [video],
+                    collapsed: true,
+                };
+                newVideos.splice(index, 1, folder);
+                await syncAndUpdate(newVideos);
+                break;
+            }
         }
     };
 
@@ -247,29 +261,110 @@ export default function HomeScreen({ onSettings, theme, colorScheme, onToggleCol
         await syncVideos(newVideos);
     };
 
+    const toggleFolder = useCallback((folderId) => {
+        setVideos(prev => prev.map(item =>
+            item.type === 'folder' && item.id === folderId
+                ? { ...item, collapsed: !item.collapsed }
+                : item
+        ));
+    }, []);
+
+    const handleFolderChildMenu = async (action, childVideo, folderId) => {
+        const folderIndex = videos.findIndex(v => v.id === folderId);
+        if (folderIndex === -1) return;
+        const folder = videos[folderIndex];
+        const childIndex = folder.children.findIndex(v => v.id === childVideo.id);
+        if (childIndex === -1) return;
+
+        let newChildren = [...folder.children];
+        let newVideos = [...videos];
+
+        switch (action) {
+            case 'edit':
+                setSelectedVideo(childVideo);
+                setEditTitleVisible(true);
+                return;
+            case 'delete':
+                newChildren.splice(childIndex, 1);
+                break;
+            case 'top':
+                newChildren.splice(childIndex, 1);
+                newChildren.unshift(childVideo);
+                break;
+            case 'bottom':
+                newChildren.splice(childIndex, 1);
+                newChildren.push(childVideo);
+                break;
+            case 'up':
+                if (childIndex > 0) {
+                    [newChildren[childIndex], newChildren[childIndex - 1]] = [newChildren[childIndex - 1], newChildren[childIndex]];
+                }
+                break;
+            case 'down':
+                if (childIndex < newChildren.length - 1) {
+                    [newChildren[childIndex], newChildren[childIndex + 1]] = [newChildren[childIndex + 1], newChildren[childIndex]];
+                }
+                break;
+            default:
+                return;
+        }
+
+        // If folder is now empty, remove it
+        if (newChildren.length === 0) {
+            newVideos.splice(folderIndex, 1);
+        } else {
+            newVideos[folderIndex] = { ...folder, children: newChildren };
+        }
+        await syncAndUpdate(newVideos);
+    };
+
     const handleEditTitle = async (videoId, newTitle) => {
-        const newVideos = videos.map(v =>
-            v.id === videoId ? { ...v, title: newTitle } : v
-        );
+        // Check if editing a child inside a folder
+        const newVideos = videos.map(item => {
+            if (item.type === 'folder') {
+                const childIdx = item.children.findIndex(c => c.id === videoId);
+                if (childIdx !== -1) {
+                    const newChildren = [...item.children];
+                    newChildren[childIdx] = { ...newChildren[childIdx], title: newTitle };
+                    return { ...item, children: newChildren };
+                }
+            }
+            return item.id === videoId ? { ...item, title: newTitle } : item;
+        });
         await syncAndUpdate(newVideos);
     };
 
     const isNeumorphic = theme === 'neumorphic';
 
     // Shared modal/list rendering helpers
-    const renderVideoItem = useCallback(({ item, dragHandlers, isActive }) => (
-        <VideoItem
-            item={item}
-            theme={theme}
-            colorScheme={colorScheme}
-            isActive={isActive}
-            dragHandlers={isSearching ? undefined : dragHandlers}
-            onMenu={(v) => {
-                setSelectedVideo(v);
-                setMenuVisible(true);
-            }}
-        />
-    ), [theme, colorScheme, isSearching]);
+    const renderVideoItem = useCallback(({ item, dragHandlers, isActive }) => {
+        if (item.type === 'folder') {
+            return (
+                <FolderItem
+                    folder={item}
+                    theme={theme}
+                    colorScheme={colorScheme}
+                    isActive={isActive}
+                    dragHandlers={isSearching ? undefined : dragHandlers}
+                    onToggle={() => toggleFolder(item.id)}
+                    onChildMenu={(action, childVideo) => handleFolderChildMenu(action, childVideo, item.id)}
+                />
+            );
+        }
+        return (
+            <VideoItem
+                item={item}
+                theme={theme}
+                colorScheme={colorScheme}
+                isActive={isActive}
+                dragHandlers={isSearching ? undefined : dragHandlers}
+                onMenu={(v) => {
+                    setSelectedVideo(v);
+                    setMenuVisible(true);
+                }}
+            />
+        );
+    }, [theme, colorScheme, isSearching, toggleFolder]);
 
     const handleItemTap = useCallback((index) => {
         const v = isSearching ? filteredVideos[index] : videos[index];

@@ -132,3 +132,114 @@
     opacity: 0.5;
     border: 2px dashed #cc0000;
 }
+
+/* ── Folder Styles ── */
+.folder-item {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.folder-header {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    gap: 12px;
+}
+
+.folder-title {
+    font-weight: 700;
+    font-size: 1rem;
+    color: #333;
+}
+
+.folder-subtitle {
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 2px;
+}
+
+.folder-chevron {
+    position: static;
+    font-size: 16px;
+    padding: 8px 12px;
+    color: #666;
+    flex-shrink: 0;
+}
+
+.folder-children {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #eee;
+}
+
+.folder-child-item {
+    display: flex;
+    align-items: center;
+    padding: 6px 0 6px 10px;
+    position: relative;
+    border-radius: 4px;
+    transition: background 0.15s;
+}
+
+.folder-child-item:hover {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.folder-child-thumbnail {
+    width: 80px;
+    height: 45px;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+.folder-child-info {
+    flex: 1;
+    overflow: hidden;
+    margin-right: 34px;
+}
+
+.folder-child-info .video-link {
+    font-size: 0.85rem;
+    font-weight: 500;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+}
+
+.folder-child-item .menu-btn {
+    position: absolute;
+    top: 50%;
+    right: 2px;
+    transform: translateY(-50%);
+    font-size: 18px;
+    padding: 4px 8px;
+}
+
+.folder-child-menu {
+    position: absolute;
+    right: 30px;
+    top: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 200;
+    min-width: 140px;
+}
+
+.folder-child-menu .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+}
+
+.folder-child-menu .menu-icon {
+    font-size: 14px;
+}
+
+.folder-child-menu .menu-text {
+    font-size: 13px;
+}

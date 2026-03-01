@@ -18,7 +18,7 @@ window.addEventListener('resize', () => {
     }
 });
 
-export function renderList(videos, listElement, moveCallback, removeCallback, editCallback, moveToListCallback) {
+export function renderList(videos, listElement, moveCallback, removeCallback, editCallback, moveToListCallback, addToFolderCallback) {
     if (videos.length === 0) {
         listElement.innerHTML = '<li style="padding: 20px; text-align: center; color: #999;">No videos found.</li>';
         return;
@@ -50,17 +50,25 @@ export function renderList(videos, listElement, moveCallback, removeCallback, ed
     videos.forEach((video) => {
         let li = currentItems.get(video.id);
         if (!li) {
-            li = createVideoItem(video, moveCallback, removeCallback, editCallback, moveToListCallback);
-        } else {
-            // Update Title if changed
-            const titleEl = li.querySelector('.video-title');
-            if (titleEl && titleEl.textContent !== video.title) {
-                titleEl.textContent = video.title;
+            if (video.type === 'folder') {
+                li = createFolderItem(video, removeCallback, moveCallback, editCallback, moveToListCallback, addToFolderCallback);
+            } else {
+                li = createVideoItem(video, moveCallback, removeCallback, editCallback, moveToListCallback, addToFolderCallback);
             }
-            // Update Thumbnail if changed
-            const img = li.querySelector('.video-thumbnail');
-            if (img && video.thumbnail && img.src !== video.thumbnail && img.src !== `http://localhost:5000/thumbnails/${video.id}.jpg`) {
-                img.src = video.thumbnail;
+        } else {
+            if (video.type === 'folder') {
+                updateFolderItem(li, video, removeCallback, moveCallback, editCallback);
+            } else {
+                // Update Title if changed
+                const titleEl = li.querySelector('.video-title');
+                if (titleEl && titleEl.textContent !== video.title) {
+                    titleEl.textContent = video.title;
+                }
+                // Update Thumbnail if changed
+                const img = li.querySelector('.video-thumbnail');
+                if (img && video.thumbnail && img.src !== video.thumbnail && img.src !== `http://localhost:5000/thumbnails/${video.id}.jpg`) {
+                    img.src = video.thumbnail;
+                }
             }
         }
         // Appending moves existing elements to the new sorted order (FLIP: Last)
@@ -169,7 +177,162 @@ function closeAllMenus() {
     });
 }
 
-function createVideoItem(video, moveCallback, removeCallback, editCallback, moveToListCallback) {
+function createFolderItem(folder, removeCallback, moveCallback, editCallback, moveToListCallback, addToFolderCallback) {
+    const li = document.createElement('li');
+    li.className = 'video-item folder-item';
+    li.dataset.id = folder.id;
+    li._folderData = folder;
+
+    const header = document.createElement('div');
+    header.className = 'folder-header';
+
+    const img = document.createElement('img');
+    img.src = folder.thumbnail || '';
+    img.className = 'video-thumbnail';
+
+    const infoDiv = document.createElement('div');
+    infoDiv.className = 'video-info';
+
+    const titleContainer = document.createElement('div');
+    titleContainer.className = 'title-container';
+    const titleEl = document.createElement('span');
+    titleEl.className = 'video-title folder-title';
+    titleEl.textContent = folder.title;
+    titleContainer.appendChild(titleEl);
+
+    const subtitle = document.createElement('div');
+    subtitle.className = 'folder-subtitle';
+    subtitle.textContent = `${folder.children.length} video${folder.children.length !== 1 ? 's' : ''}`;
+
+    infoDiv.appendChild(titleContainer);
+    infoDiv.appendChild(subtitle);
+
+    const chevron = document.createElement('button');
+    chevron.className = 'menu-btn folder-chevron';
+    chevron.textContent = folder.collapsed !== false ? '▶' : '▼';
+
+    header.appendChild(img);
+    header.appendChild(infoDiv);
+    header.appendChild(chevron);
+
+    const childrenDiv = document.createElement('div');
+    childrenDiv.className = 'folder-children';
+    if (folder.collapsed !== false) {
+        childrenDiv.style.display = 'none';
+    }
+
+    renderFolderChildren(childrenDiv, folder, removeCallback, moveCallback, editCallback);
+
+    header.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isCollapsed = childrenDiv.style.display === 'none';
+        childrenDiv.style.display = isCollapsed ? 'block' : 'none';
+        chevron.textContent = isCollapsed ? '▼' : '▶';
+        li._folderData.collapsed = !isCollapsed;
+    });
+
+    li.appendChild(header);
+    li.appendChild(childrenDiv);
+    return li;
+}
+
+function updateFolderItem(li, folder, removeCallback, moveCallback, editCallback) {
+    li._folderData = folder;
+    const titleEl = li.querySelector('.folder-title');
+    if (titleEl && titleEl.textContent !== folder.title) titleEl.textContent = folder.title;
+    const subtitle = li.querySelector('.folder-subtitle');
+    if (subtitle) subtitle.textContent = `${folder.children.length} video${folder.children.length !== 1 ? 's' : ''}`;
+    const childrenDiv = li.querySelector('.folder-children');
+    if (childrenDiv) renderFolderChildren(childrenDiv, folder, removeCallback, moveCallback, editCallback);
+}
+
+function renderFolderChildren(container, folder, removeCallback, moveCallback, editCallback) {
+    container.innerHTML = '';
+    folder.children.forEach(child => {
+        const childEl = document.createElement('div');
+        childEl.className = 'folder-child-item';
+        childEl.dataset.id = child.id;
+
+        const img = document.createElement('img');
+        const localThumbUrl = `http://localhost:5000/thumbnails/${child.id}.jpg`;
+        const remoteThumbUrl = child.thumbnail || `https://i.ytimg.com/vi/${child.id}/mqdefault.jpg`;
+        img.src = localThumbUrl;
+        img.onerror = () => { if (img.src !== remoteThumbUrl) img.src = remoteThumbUrl; };
+        img.className = 'folder-child-thumbnail';
+
+        const info = document.createElement('div');
+        info.className = 'folder-child-info';
+        const title = document.createElement('div');
+        title.className = 'video-title';
+        title.textContent = child.title;
+        info.appendChild(title);
+
+        const menuBtn = document.createElement('button');
+        menuBtn.className = 'menu-btn';
+        menuBtn.innerHTML = '&#8942;';
+        menuBtn.onclick = (e) => {
+            e.stopPropagation();
+            const existingMenu = childEl.querySelector('.folder-child-menu');
+            if (existingMenu) { existingMenu.remove(); return; }
+            container.querySelectorAll('.folder-child-menu').forEach(m => m.remove());
+
+            const menu = document.createElement('div');
+            menu.className = 'folder-child-menu';
+            const childOpts = [
+                { label: 'Edit Title', icon: '✎', action: () => { menu.remove(); enterChildEditMode(child, childEl, info, title, editCallback); } },
+                { label: 'Move Up', icon: '↑', action: () => { menu.remove(); moveCallback(child.id, 'up'); } },
+                { label: 'Move Down', icon: '↓', action: () => { menu.remove(); moveCallback(child.id, 'down'); } },
+                { label: 'Remove', icon: '🗑', action: () => { menu.remove(); removeCallback(child.id); }, isDelete: true },
+            ];
+            childOpts.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'dropdown-item' + (opt.isDelete ? ' delete-item' : '');
+                btn.title = opt.label;
+                const iconSpan = document.createElement('span');
+                iconSpan.className = 'menu-icon';
+                iconSpan.textContent = opt.icon;
+                const textSpan = document.createElement('span');
+                textSpan.className = 'menu-text';
+                textSpan.textContent = opt.label;
+                btn.appendChild(iconSpan);
+                btn.appendChild(textSpan);
+                btn.onclick = (e) => { e.stopPropagation(); opt.action(); };
+                menu.appendChild(btn);
+            });
+            childEl.appendChild(menu);
+        };
+
+        childEl.appendChild(img);
+        childEl.appendChild(info);
+        childEl.appendChild(menuBtn);
+        container.appendChild(childEl);
+    });
+}
+
+function enterChildEditMode(video, container, infoDiv, titleEl, editCallback) {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = video.title;
+    input.style.width = '100%';
+    input.style.padding = '4px';
+    input.style.fontSize = '1rem';
+
+    const save = () => {
+        const newTitle = input.value.trim();
+        if (newTitle && newTitle !== video.title) editCallback(video.id, newTitle);
+        cleanup();
+    };
+    const cleanup = () => { infoDiv.innerHTML = ''; infoDiv.appendChild(titleEl); };
+
+    input.onkeydown = (e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') cleanup(); };
+    input.onclick = (e) => e.stopPropagation();
+
+    infoDiv.innerHTML = '';
+    infoDiv.appendChild(input);
+    input.focus();
+}
+
+function createVideoItem(video, moveCallback, removeCallback, editCallback, moveToListCallback, addToFolderCallback) {
     const li = document.createElement('li');
     li.className = 'video-item';
     li.draggable = true;
@@ -273,6 +436,7 @@ function createVideoItem(video, moveCallback, removeCallback, editCallback, move
         { label: 'Move Down', icon: '↓', action: () => moveCallback(video.id, 'down'), type: 'move-down' },
         { label: 'Move to Bottom', icon: '⤓', action: () => moveCallback(video.id, 'bottom'), type: 'move-down' },
         { label: 'Move to List...', icon: '➔', action: () => moveToListCallback && moveToListCallback(video.id), type: 'move' },
+        { label: 'Add to Folder', icon: '📁', action: () => addToFolderCallback && addToFolderCallback(video), type: 'folder' },
         { label: 'Remove', icon: '🗑', action: () => removeCallback(video.id), isDelete: true, type: 'delete' }
     ];
 

@@ -22,6 +22,7 @@ export default function MenuModal({ visible, onClose, onOption, video, theme, co
         { label: 'Move Up', action: 'up', icon: '🔼', color: colors.onSurface, neuColor: nc.text },
         { label: 'Move Down', action: 'down', icon: '🔽', color: colors.onSurface, neuColor: nc.text },
         { label: 'Move to Bottom', action: 'bottom', icon: '⬇️', color: colors.onSurface, neuColor: nc.text },
+        { label: 'Add to Folder', action: 'folder', icon: '📁', color: colors.primary, neuColor: nc.accent },
         { label: 'Delete', action: 'delete', icon: '🗑️', color: colors.error, neuColor: nc.danger },
     ];
 

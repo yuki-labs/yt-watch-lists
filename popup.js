@@ -306,7 +306,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Only display up to displayedCount videos
         const videosToShow = filteredVideos.slice(0, displayedCount);
-        renderList(videosToShow, videoList, handleRemove, handleMove, handleEdit, handleMoveToList);
+        renderList(videosToShow, videoList, handleRemove, handleMove, handleEdit, handleMoveToList, handleAddToFolder);
 
         // Show count indicator if there are more videos
         updateScrollIndicator(filteredVideos.length, displayedCount);
@@ -376,10 +376,45 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    async function handleAddToFolder(video) {
+        const index = allVideos.findIndex(v => v.id === video.id);
+        if (index === -1) return;
+
+        const folder = {
+            type: 'folder',
+            id: 'folder_' + Date.now(),
+            title: '📁 ' + video.title,
+            thumbnail: video.thumbnail,
+            children: [video],
+            collapsed: true,
+        };
+
+        allVideos.splice(index, 1, folder);
+        await saveAndSync(allVideos);
+        render();
+        showMessage('Video added to folder', 'success', messageDiv);
+    }
+
     async function handleEdit(videoId, newTitle) {
-        const index = allVideos.findIndex(v => v.id === videoId);
-        if (index !== -1) {
-            allVideos[index].title = newTitle;
+        // Check if editing a child inside a folder
+        let found = false;
+        allVideos = allVideos.map(item => {
+            if (item.type === 'folder') {
+                const childIdx = item.children.findIndex(c => c.id === videoId);
+                if (childIdx !== -1) {
+                    const newChildren = [...item.children];
+                    newChildren[childIdx] = { ...newChildren[childIdx], title: newTitle };
+                    found = true;
+                    return { ...item, children: newChildren };
+                }
+            }
+            if (item.id === videoId) {
+                found = true;
+                return { ...item, title: newTitle };
+            }
+            return item;
+        });
+        if (found) {
             await saveAndSync(allVideos);
             render();
         }
@@ -456,8 +491,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     async function handleRemove(videoId) {
-        const newVideos = await removeVideo(videoId);
-        allVideos = newVideos;
+        // Check if in a folder first
+        let inFolder = false;
+        allVideos = allVideos.map(item => {
+            if (item.type === 'folder') {
+                const childIdx = item.children.findIndex(c => c.id === videoId);
+                if (childIdx !== -1) {
+                    inFolder = true;
+                    const newChildren = item.children.filter(c => c.id !== videoId);
+                    if (newChildren.length === 0) return null; // Mark for removal
+                    return { ...item, children: newChildren };
+                }
+            }
+            return item;
+        }).filter(item => item !== null);
+
+        if (!inFolder) {
+            const newVideos = await removeVideo(videoId);
+            allVideos = newVideos;
+        }
         await saveAndSync(allVideos);
         render();
     }
@@ -489,25 +541,53 @@ document.addEventListener('DOMContentLoaded', async () => {
     shuffleBtn.addEventListener('click', () => startPlayback('shuffle'));
 
     async function handleMove(videoId, direction) {
-        const index = allVideos.findIndex(v => v.id === videoId);
-        if (index === -1) return;
-
-        const newVideos = [...allVideos];
-        const [video] = newVideos.splice(index, 1);
-
-        if (direction === 'top') {
-            newVideos.unshift(video);
-        } else if (direction === 'bottom') {
-            newVideos.push(video);
-        } else if (direction === 'up') {
-            if (index > 0) newVideos.splice(index - 1, 0, video);
-            else newVideos.splice(index, 0, video);
-        } else if (direction === 'down') {
-            if (index < newVideos.length) newVideos.splice(index + 1, 0, video);
-            else newVideos.splice(index, 0, video);
+        // Check if in a folder first
+        let inFolder = false;
+        for (let i = 0; i < allVideos.length; i++) {
+            const item = allVideos[i];
+            if (item.type === 'folder') {
+                const childIdx = item.children.findIndex(c => c.id === videoId);
+                if (childIdx !== -1) {
+                    inFolder = true;
+                    const newChildren = [...item.children];
+                    if (direction === 'up' && childIdx > 0) {
+                        [newChildren[childIdx], newChildren[childIdx - 1]] = [newChildren[childIdx - 1], newChildren[childIdx]];
+                    } else if (direction === 'down' && childIdx < newChildren.length - 1) {
+                        [newChildren[childIdx], newChildren[childIdx + 1]] = [newChildren[childIdx + 1], newChildren[childIdx]];
+                    } else if (direction === 'top') {
+                        const [child] = newChildren.splice(childIdx, 1);
+                        newChildren.unshift(child);
+                    } else if (direction === 'bottom') {
+                        const [child] = newChildren.splice(childIdx, 1);
+                        newChildren.push(child);
+                    }
+                    allVideos[i] = { ...item, children: newChildren };
+                    break;
+                }
+            }
         }
 
-        allVideos = newVideos;
+        if (!inFolder) {
+            const index = allVideos.findIndex(v => v.id === videoId);
+            if (index === -1) return;
+
+            const newVideos = [...allVideos];
+            const [video] = newVideos.splice(index, 1);
+
+            if (direction === 'top') {
+                newVideos.unshift(video);
+            } else if (direction === 'bottom') {
+                newVideos.push(video);
+            } else if (direction === 'up') {
+                if (index > 0) newVideos.splice(index - 1, 0, video);
+                else newVideos.splice(index, 0, video);
+            } else if (direction === 'down') {
+                if (index < newVideos.length) newVideos.splice(index + 1, 0, video);
+                else newVideos.splice(index, 0, video);
+            }
+            allVideos = newVideos;
+        }
+
         await saveAndSync(allVideos);
         render();
     }
