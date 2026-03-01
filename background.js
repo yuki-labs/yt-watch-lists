@@ -113,7 +113,8 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     try {
         // 1. Fetch latest state from server (now from the correct list after switching)
         console.log("Fetching remote videos...");
-        const remoteVideos = await fetchRemoteVideos();
+        const remoteData = await fetchRemoteVideos();
+        const remoteVideos = remoteData?.videos || null;
         console.log("Remote videos fetched:", remoteVideos?.length || 0, "videos");
 
         let currentList = remoteVideos || await getVideos();
