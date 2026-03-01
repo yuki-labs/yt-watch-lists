@@ -492,6 +492,15 @@ function createVideoItem(video, removeCallback, moveCallback, editCallback, move
                                     el.dataset.shiftAmount = exactShift;
                                 }
                             });
+
+                            // Also expand the video list container upward, same as top-item branch
+                            const videoList = document.getElementById('video-list');
+                            if (videoList) {
+                                videoList.classList.add('shift-up');
+                                videoList.style.transition = 'margin-top 0.25s ease, padding-top 0.25s ease';
+                                videoList.style.marginTop = `-${exactShift}px`;
+                                videoList.style.paddingTop = `${16 + exactShift}px`;
+                            }
                         }
                     }
                 });
