@@ -1,0 +1,212 @@
+/* ── Modal Overlay ── */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+/* ── Modal Content ── */
+.modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 300px;
+    border: 1px solid #ccc;
+    color: #333;
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    color: inherit;
+}
+
+/* ── List Items ── */
+.modal-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin: 10px 0;
+}
+
+.modal-list-item {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.modal-list-item:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+.modal-list-item.active {
+    font-weight: bold;
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.modal-list-item span {
+    flex-grow: 1;
+    cursor: pointer;
+}
+
+/* ── Buttons ── */
+.modal-icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #999;
+    margin-left: 10px;
+}
+
+.modal-cancel-btn {
+    margin-top: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    color: #666;
+}
+
+.modal-cancel-btn:hover {
+    color: #333;
+}
+
+/* ── Rename Input ── */
+.modal-rename-input {
+    flex-grow: 1;
+    padding: 4px;
+    margin-right: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* ── Create Input ── */
+.modal-create-input {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* ── Dark Mode ── */
+body.dark .modal-content {
+    background-color: #1a1a2e;
+    border-color: #2a2a3e;
+    color: #e0e0e0;
+}
+
+body.dark .modal-list-item {
+    border-bottom-color: #2a2a3e;
+}
+
+body.dark .modal-list-item:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+body.dark .modal-list-item.active {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+body.dark .modal-icon-btn {
+    color: #666;
+}
+
+body.dark .modal-cancel-btn {
+    color: #888;
+}
+
+body.dark .modal-cancel-btn:hover {
+    color: #e0e0e0;
+}
+
+body.dark .modal-rename-input,
+body.dark .modal-create-input {
+    background-color: #22223a;
+    border-color: #2a2a3e;
+    color: #e0e0e0;
+}
+
+/* ── Neumorphic ── */
+body.neumorphic .modal-content {
+    background-color: #e0e5ec;
+    border: none;
+    border-radius: 15px;
+    box-shadow: 9px 9px 16px #9baec8, -9px -9px 16px #ffffff;
+    color: #4a4a4a;
+}
+
+body.neumorphic .modal-list-item {
+    border-bottom-color: #d1d9e6;
+}
+
+body.neumorphic .modal-list-item:hover {
+    background-color: transparent;
+    box-shadow: 3px 3px 6px #9baec8, -3px -3px 6px #ffffff;
+}
+
+body.neumorphic .modal-list-item.active {
+    background-color: transparent;
+    box-shadow: inset 3px 3px 6px #9baec8, inset -3px -3px 6px #ffffff;
+}
+
+body.neumorphic .modal-rename-input,
+body.neumorphic .modal-create-input {
+    background-color: #e0e5ec;
+    border: none;
+    border-radius: 8px;
+    box-shadow: inset 2px 2px 5px #cbced1, inset -2px -2px 5px #ffffff;
+    color: #4a4a4a;
+}
+
+body.neumorphic .modal-icon-btn {
+    color: #7a7a7a;
+}
+
+body.neumorphic .modal-cancel-btn {
+    color: #7a7a7a;
+}
+
+/* ── Dark Neumorphic ── */
+body.dark.neumorphic .modal-content {
+    background-color: #2a2d32;
+    box-shadow: 9px 9px 16px #1e2024, -9px -9px 16px #363a40;
+    color: #d0d0d0;
+}
+
+body.dark.neumorphic .modal-list-item {
+    border-bottom-color: #363a40;
+}
+
+body.dark.neumorphic .modal-list-item:hover {
+    box-shadow: 3px 3px 6px #1e2024, -3px -3px 6px #363a40;
+}
+
+body.dark.neumorphic .modal-list-item.active {
+    box-shadow: inset 3px 3px 6px #1e2024, inset -3px -3px 6px #363a40;
+}
+
+body.dark.neumorphic .modal-rename-input,
+body.dark.neumorphic .modal-create-input {
+    background-color: #2a2d32;
+    box-shadow: inset 2px 2px 5px #1e2024, inset -2px -2px 5px #363a40;
+    color: #d0d0d0;
+}
+
+body.dark.neumorphic .modal-icon-btn {
+    color: #888;
+}
+
+body.dark.neumorphic .modal-cancel-btn {
+    color: #888;
+}

@@ -7,16 +7,7 @@ export function showListModal(lists, current, messageDiv, onUpdate, actionCallba
 
     const modalOverlay = document.createElement('div');
     modalOverlay.id = 'list-modal';
-    modalOverlay.style.position = 'fixed';
-    modalOverlay.style.top = '0';
-    modalOverlay.style.left = '0';
-    modalOverlay.style.width = '100%';
-    modalOverlay.style.height = '100%';
-    modalOverlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
-    modalOverlay.style.display = 'flex';
-    modalOverlay.style.justifyContent = 'center';
-    modalOverlay.style.alignItems = 'center';
-    modalOverlay.style.zIndex = '2000';
+    modalOverlay.className = 'modal-overlay';
 
     modalOverlay.onclick = (e) => {
         if (e.target === modalOverlay) {
@@ -25,50 +16,20 @@ export function showListModal(lists, current, messageDiv, onUpdate, actionCallba
     };
 
     const modalContent = document.createElement('div');
-    modalContent.style.backgroundColor = 'white';
-    modalContent.style.padding = '20px';
-    modalContent.style.borderRadius = '10px';
-    modalContent.style.width = '300px';
-    modalContent.style.width = '300px';
-    modalContent.style.border = '1px solid #ccc';
-
-    if (document.body.classList.contains('neumorphic')) {
-        modalContent.style.backgroundColor = '#e0e5ec';
-        if (document.body.classList.contains('neumorphic')) {
-            modalContent.style.backgroundColor = '#e0e5ec';
-            modalContent.style.border = '1px solid #d1d9e6';
-            modalContent.style.color = '#4a4a4a';
-        }
-        modalContent.style.color = '#4a4a4a';
-    }
+    modalContent.className = 'modal-content';
 
     const title = document.createElement('h3');
     title.textContent = titleText;
-    title.style.marginTop = '0';
 
     const listContainer = document.createElement('div');
-    listContainer.style.maxHeight = '200px';
-    listContainer.style.overflowY = 'auto';
-    listContainer.style.margin = '10px 0';
+    listContainer.className = 'modal-list';
 
     lists.forEach(filename => {
         const item = document.createElement('div');
-        item.style.padding = '8px';
-        item.style.borderBottom = '1px solid #eee';
-        item.style.borderRadius = '4px';
-        item.style.display = 'flex';
-        item.style.justifyContent = 'space-between';
-        item.style.alignItems = 'center';
+        item.className = 'modal-list-item' + (filename === current ? ' active' : '');
 
         const nameSpan = document.createElement('span');
         nameSpan.textContent = filename;
-        nameSpan.style.cursor = 'pointer';
-        nameSpan.style.flexGrow = '1';
-
-        if (filename === current) {
-            item.style.fontWeight = 'bold';
-            item.style.backgroundColor = 'rgba(0,0,0,0.05)';
-        }
 
         nameSpan.onclick = async () => {
             if (actionCallback) {
@@ -86,11 +47,7 @@ export function showListModal(lists, current, messageDiv, onUpdate, actionCallba
         const renameBtn = document.createElement('button');
         renameBtn.innerHTML = '✎';
         renameBtn.title = 'Rename List';
-        renameBtn.style.background = 'none';
-        renameBtn.style.border = 'none';
-        renameBtn.style.cursor = 'pointer';
-        renameBtn.style.color = '#999';
-        renameBtn.style.marginLeft = '10px';
+        renameBtn.className = 'modal-icon-btn';
 
         renameBtn.onclick = (e) => {
             e.stopPropagation();
@@ -108,30 +65,17 @@ export function showListModal(lists, current, messageDiv, onUpdate, actionCallba
         const input = document.createElement('input');
         input.type = 'text';
         input.value = oldName.replace('.json', '');
-        input.style.flexGrow = '1';
-        input.style.padding = '4px';
-        input.style.marginRight = '5px';
-
-        // Re-use neumorphic style if needed?
-        if (document.body.classList.contains('neumorphic')) {
-            input.style.border = 'none';
-            input.style.borderRadius = '4px';
-            input.style.boxShadow = 'inset 2px 2px 5px #cbced1, inset -2px -2px 5px #ffffff';
-        }
+        input.className = 'modal-rename-input';
 
         const saveBtn = document.createElement('button');
         saveBtn.textContent = '✔';
-        saveBtn.style.cursor = 'pointer';
+        saveBtn.className = 'modal-icon-btn';
         saveBtn.style.color = 'green';
-        saveBtn.style.border = 'none';
-        saveBtn.style.background = 'none';
 
         const cancelBtn = document.createElement('button');
         cancelBtn.textContent = '✘';
-        cancelBtn.style.cursor = 'pointer';
+        cancelBtn.className = 'modal-icon-btn';
         cancelBtn.style.color = 'red';
-        cancelBtn.style.border = 'none';
-        cancelBtn.style.background = 'none';
 
         const finish = async () => {
             const newNameRaw = input.value.trim();
@@ -149,7 +93,6 @@ export function showListModal(lists, current, messageDiv, onUpdate, actionCallba
                     modalOverlay.remove();
                     if (messageDiv) showMessage(`Renamed ${oldName} to ${newName}`, 'success', messageDiv);
                     if (oldName === current) {
-                        // Current list renamed, should refresh
                         const remoteVideos = await fetchRemoteVideos();
                         if (remoteVideos && onUpdate) onUpdate(remoteVideos);
                     }
@@ -169,11 +112,8 @@ export function showListModal(lists, current, messageDiv, onUpdate, actionCallba
 
             const rb = document.createElement('button');
             rb.innerHTML = '✎';
-            rb.style.background = 'none';
-            rb.style.border = 'none';
-            rb.style.cursor = 'pointer';
-            rb.style.color = '#999';
-            rb.style.marginLeft = '10px';
+            rb.title = 'Rename List';
+            rb.className = 'modal-icon-btn';
             rb.onclick = (e) => { e.stopPropagation(); enterRenameMode(itemContainer, oldName, nameSpan); };
             itemContainer.appendChild(rb);
         };
@@ -199,28 +139,15 @@ export function showListModal(lists, current, messageDiv, onUpdate, actionCallba
     newBtn.style.marginTop = '10px';
 
     newBtn.onclick = () => {
-        // In-modal input logic
         modalContent.innerHTML = '';
 
         const inputTitle = document.createElement('h3');
         inputTitle.textContent = 'New List Name';
-        inputTitle.style.marginTop = '0';
 
         const input = document.createElement('input');
         input.type = 'text';
         input.placeholder = 'e.g., Music...';
-        input.style.width = '100%';
-        input.style.padding = '8px';
-        input.style.marginBottom = '10px';
-        input.style.boxSizing = 'border-box';
-
-        if (document.body.classList.contains('neumorphic')) {
-            input.style.backgroundColor = '#e0e5ec';
-            input.style.border = 'none';
-            input.style.borderRadius = '50px';
-            input.style.boxShadow = 'inset 6px 6px 10px #9baec8, inset -6px -6px 10px #ffffff';
-            input.style.color = '#4a4a4a';
-        }
+        input.className = 'modal-create-input';
 
         const createConfirmBtn = document.createElement('button');
         createConfirmBtn.textContent = 'Create';
@@ -229,11 +156,7 @@ export function showListModal(lists, current, messageDiv, onUpdate, actionCallba
 
         const backBtn = document.createElement('button');
         backBtn.textContent = 'Cancel';
-        backBtn.style.marginTop = '10px';
-        backBtn.style.background = 'none';
-        backBtn.style.border = 'none';
-        backBtn.style.cursor = 'pointer';
-        backBtn.style.width = '100%';
+        backBtn.className = 'modal-cancel-btn';
         backBtn.onclick = () => {
             modalOverlay.remove();
             showListModal(lists, current, messageDiv, onUpdate);
@@ -246,7 +169,6 @@ export function showListModal(lists, current, messageDiv, onUpdate, actionCallba
                     if (res.success) {
                         await switchList(name.endsWith('.json') ? name : name + '.json');
                         if (messageDiv) showMessage(`Created & switched to ${name}`, 'success', messageDiv);
-                        // Refresh data from server (should be empty for new list)
                         const remoteVideos = await fetchRemoteVideos();
                         if (remoteVideos && onUpdate) {
                             onUpdate(remoteVideos);
@@ -268,11 +190,7 @@ export function showListModal(lists, current, messageDiv, onUpdate, actionCallba
 
     const closeBtn = document.createElement('button');
     closeBtn.textContent = 'Cancel';
-    closeBtn.style.marginTop = '10px';
-    closeBtn.style.background = 'none';
-    closeBtn.style.border = 'none';
-    closeBtn.style.cursor = 'pointer';
-    closeBtn.style.width = '100%';
+    closeBtn.className = 'modal-cancel-btn';
     closeBtn.onclick = () => modalOverlay.remove();
 
     modalContent.appendChild(title);
