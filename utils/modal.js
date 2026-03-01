@@ -38,8 +38,12 @@ export function showListModal(lists, current, messageDiv, onUpdate, actionCallba
             } else if (filename !== current) {
                 await switchList(filename);
                 if (messageDiv) showMessage(`Switched to ${filename}`, 'success', messageDiv);
-                const remoteVideos = await fetchRemoteVideos();
-                if (remoteVideos && onUpdate) onUpdate(remoteVideos);
+                const remoteData = await fetchRemoteVideos();
+                if (remoteData && onUpdate) {
+                    // Extract videos array from response ({ videos, timestamp, deletedVideos })
+                    const videos = Array.isArray(remoteData) ? remoteData : (remoteData.videos || []);
+                    onUpdate(videos);
+                }
             }
             modalOverlay.remove();
         };
