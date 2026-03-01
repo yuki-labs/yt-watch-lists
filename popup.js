@@ -28,6 +28,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Enable DnD
     enableDragAndDrop(videoList, handleReorder);
 
+    // Settings Cog Logic
+    const settingsCog = document.getElementById('settings-cog');
+    const settingsPanel = document.getElementById('settings-panel');
+    if (settingsCog && settingsPanel) {
+        settingsCog.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = !settingsPanel.classList.contains('hidden');
+            if (isOpen) {
+                settingsPanel.classList.add('hidden');
+                settingsCog.classList.remove('active');
+            } else {
+                settingsPanel.classList.remove('hidden');
+                settingsCog.classList.add('active');
+            }
+        });
+        // Close when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!settingsPanel.contains(e.target) && e.target !== settingsCog) {
+                settingsPanel.classList.add('hidden');
+                settingsCog.classList.remove('active');
+            }
+        });
+    }
+
     // Theme Logic
     const themeToggle = document.getElementById('theme-toggle');
     const savedTheme = localStorage.getItem('theme');
@@ -96,6 +120,27 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const container = document.querySelector('.container');
                 if (container) container.scrollTop = 0;
             }
+        });
+    }
+
+    // Dark Mode Logic
+    const darkToggle = document.getElementById('dark-toggle');
+    const savedDark = localStorage.getItem('colorScheme');
+    if (savedDark === 'dark') {
+        document.body.classList.add('dark');
+    }
+    if (darkToggle) {
+        const darkIcon = darkToggle.querySelector('.settings-icon');
+        const updateDarkState = () => {
+            const isDark = document.body.classList.contains('dark');
+            if (darkIcon) darkIcon.textContent = isDark ? '☀️' : '🌙';
+        };
+        updateDarkState();
+        darkToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+            const isDark = document.body.classList.contains('dark');
+            localStorage.setItem('colorScheme', isDark ? 'dark' : 'light');
+            updateDarkState();
         });
     }
 

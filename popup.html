@@ -14,15 +14,29 @@
         <div id="scroll-spacer"></div>
         <header class="header">
             <h1>Watch Later</h1>
+            <div class="header-controls">
+                <button id="settings-cog" class="settings-cog" title="Settings">⚙️</button>
+            </div>
         </header>
+        <!-- Settings Dropdown -->
+        <div id="settings-panel" class="settings-panel hidden">
+            <button id="theme-toggle" class="settings-item">
+                <span class="settings-icon">🌗</span>
+                <span class="settings-label">Neumorphic</span>
+            </button>
+            <button id="dark-toggle" class="settings-item">
+                <span class="settings-icon">🌙</span>
+                <span class="settings-label">Dark Mode</span>
+            </button>
+            <button id="change-list-btn" class="settings-item">
+                <span class="settings-icon">≣</span>
+                <span class="settings-label">Switch List</span>
+            </button>
+        </div>
         <main>
             <div class="button-group">
                 <button id="add-btn" class="primary-btn">Add Current Video</button>
                 <button id="sync-btn" class="secondary-btn">Sync to Desktop</button>
-                <div class="stacked-controls">
-                    <button id="theme-toggle" class="theme-toggle" title="Toggle Theme">🌗</button>
-                    <button id="change-list-btn" class="theme-toggle" title="Change List">≣</button>
-                </div>
             </div>
             <div class="search-container">
                 <input type="text" id="search-input" placeholder="Search videos..." class="search-input">
