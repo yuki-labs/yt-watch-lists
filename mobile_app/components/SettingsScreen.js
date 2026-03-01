@@ -242,17 +242,19 @@ export default function SettingsScreen({ onSave, onBack, theme, colorScheme }) {
     return (
         <Animated.View style={[styles.container, { backgroundColor: containerBg }]}>
             {/* ── Header ── */}
-            {onBack && (
-                <Animated.View style={[styles.header, { backgroundColor: headerBg }]}>
+            <Animated.View style={[styles.header, { backgroundColor: headerBg }]}>
+                {onBack ? (
                     <TouchableOpacity onPress={onBack} style={styles.backBtn}>
                         <Animated.Text style={[styles.backIcon, { color: headingColor }]}>←</Animated.Text>
                     </TouchableOpacity>
-                    <Animated.Text style={[styles.headerTitle, { color: headingColor }]}>
-                        Settings
-                    </Animated.Text>
+                ) : (
                     <View style={styles.backBtn} />
-                </Animated.View>
-            )}
+                )}
+                <Animated.Text style={[styles.headerTitle, { color: headingColor }]}>
+                    {onBack ? 'Settings' : 'Configure'}
+                </Animated.Text>
+                <View style={styles.backBtn} />
+            </Animated.View>
 
             {/* ── Content ── */}
             <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
