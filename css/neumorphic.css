@@ -8,7 +8,7 @@ body.neumorphic {
 }
 
 body.neumorphic .button-group {
-    padding-left: 10px;
+    padding: 0 10px;
 }
 
 body.neumorphic .header {
