@@ -492,8 +492,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             const result = await getLists();
             if (result.success) {
                 const filteredLists = result.lists.filter(f => !f.endsWith('_tombstones.json'));
-                showListModal(filteredLists, result.current, messageDiv, (videos) => {
+                showListModal(filteredLists, result.current, messageDiv, async (videos) => {
                     allVideos = videos;
+                    // Persist to chrome.storage so reopening popup shows correct list
+                    await saveVideos(allVideos);
                     render();
                 });
             } else {

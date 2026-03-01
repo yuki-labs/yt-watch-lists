@@ -32,20 +32,35 @@ export function showListModal(lists, current, messageDiv, onUpdate, actionCallba
         const nameSpan = document.createElement('span');
         nameSpan.textContent = filename;
 
-        nameSpan.onclick = async () => {
-            if (actionCallback) {
-                await actionCallback(filename);
-            } else if (filename !== current) {
-                await switchList(filename);
-                if (messageDiv) showMessage(`Switched to ${filename}`, 'success', messageDiv);
-                const remoteData = await fetchRemoteVideos();
-                if (remoteData && onUpdate) {
-                    // Extract videos array from response ({ videos, timestamp, deletedVideos })
-                    const videos = Array.isArray(remoteData) ? remoteData : (remoteData.videos || []);
-                    onUpdate(videos);
+        // Click handler on entire item div so the full row is clickable
+        item.onclick = async (e) => {
+            // Don't trigger switch if clicking rename button
+            if (e.target.closest('.modal-icon-btn')) return;
+
+            try {
+                if (actionCallback) {
+                    await actionCallback(filename);
+                } else if (filename !== current) {
+                    const switchResult = await switchList(filename);
+                    if (switchResult && switchResult.success === false) {
+                        if (messageDiv) showMessage('Switch failed: ' + (switchResult.error || 'Unknown error'), 'error', messageDiv);
+                        return;
+                    }
+                    if (messageDiv) showMessage(`Switched to ${filename}`, 'success', messageDiv);
+                    const remoteData = await fetchRemoteVideos();
+                    if (onUpdate) {
+                        // Extract videos array from response ({ videos, timestamp, deletedVideos })
+                        const videos = remoteData
+                            ? (Array.isArray(remoteData) ? remoteData : (remoteData.videos || []))
+                            : [];
+                        onUpdate(videos);
+                    }
                 }
+                modalOverlay.remove();
+            } catch (err) {
+                console.error('List switch error:', err);
+                if (messageDiv) showMessage('Error switching list: ' + err.message, 'error', messageDiv);
             }
-            modalOverlay.remove();
         };
 
         // Rename Button
