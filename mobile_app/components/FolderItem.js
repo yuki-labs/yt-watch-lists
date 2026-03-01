@@ -9,7 +9,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
     UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-export default function FolderItem({ folder, onToggle, onChildMenu, theme, colorScheme, dragHandlers, isActive }) {
+export default function FolderItem({ folder, onToggle, onChildMenu, onRename, theme, colorScheme, dragHandlers, isActive }) {
     const isNeumorphic = theme === 'neumorphic';
     const colors = getColors(colorScheme);
     const nc = getNeuColors(colorScheme);
@@ -64,8 +64,13 @@ export default function FolderItem({ folder, onToggle, onChildMenu, theme, color
                                 resizeMode="cover"
                             />
                         </View>
-                        <View style={[styles.pill, { backgroundColor: `${nc.shadowDark}0.12)` }]}>
-                            <Text style={[styles.pillText, { color: nc.text }]}>{pillText}</Text>
+                        <View style={styles.pillRow}>
+                            <View style={[styles.pill, { backgroundColor: `${nc.shadowDark}0.12)` }]}>
+                                <Text style={[styles.pillText, { color: nc.text }]}>{pillText}</Text>
+                            </View>
+                            <TouchableOpacity onPress={(e) => { e.stopPropagation && e.stopPropagation(); onRename && onRename(folder); }} hitSlop={8}>
+                                <Text style={[styles.renameIcon, { color: nc.textSecondary || nc.text }]}>✎</Text>
+                            </TouchableOpacity>
                         </View>
                     </View>
                     <View style={styles.neuInfo}>
@@ -134,8 +139,13 @@ export default function FolderItem({ folder, onToggle, onChildMenu, theme, color
                         style={styles.m3Thumbnail}
                         resizeMode="cover"
                     />
-                    <View style={[styles.pill, { backgroundColor: colors.surfaceContainerHighest }]}>
-                        <Text style={[styles.pillText, { color: colors.onSurfaceVariant }]}>{pillText}</Text>
+                    <View style={styles.pillRow}>
+                        <View style={[styles.pill, { backgroundColor: colors.surfaceContainerHighest }]}>
+                            <Text style={[styles.pillText, { color: colors.onSurfaceVariant }]}>{pillText}</Text>
+                        </View>
+                        <TouchableOpacity onPress={(e) => { e.stopPropagation && e.stopPropagation(); onRename && onRename(folder); }} hitSlop={8}>
+                            <Text style={[styles.renameIcon, { color: colors.onSurfaceVariant }]}>✎</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
                 <View style={styles.m3Info}>
@@ -224,6 +234,16 @@ const styles = StyleSheet.create({
     pillText: {
         fontSize: 10,
         fontWeight: '600',
+    },
+    pillRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginTop: 4,
+    },
+    renameIcon: {
+        fontSize: 14,
+        fontWeight: 'bold',
     },
     dragHandle: {
         width: 24,

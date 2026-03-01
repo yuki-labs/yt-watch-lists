@@ -177,6 +177,59 @@ function closeAllMenus() {
     });
 }
 
+function showRenameDialog(currentTitle, onSave) {
+    const overlay = document.createElement('div');
+    overlay.className = 'rename-dialog-overlay';
+
+    const card = document.createElement('div');
+    card.className = 'rename-dialog-card';
+
+    const heading = document.createElement('div');
+    heading.className = 'rename-dialog-heading';
+    heading.textContent = 'Rename Folder';
+
+    const textarea = document.createElement('textarea');
+    textarea.className = 'rename-dialog-input';
+    textarea.value = currentTitle;
+    textarea.rows = 3;
+
+    const btnRow = document.createElement('div');
+    btnRow.className = 'rename-dialog-buttons';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'rename-dialog-btn cancel';
+    cancelBtn.textContent = 'Cancel';
+
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'rename-dialog-btn save';
+    saveBtn.textContent = 'Save';
+
+    const close = () => overlay.remove();
+    const save = () => {
+        const val = textarea.value.trim();
+        close();
+        if (val) onSave(val);
+    };
+
+    cancelBtn.onclick = close;
+    saveBtn.onclick = save;
+    overlay.onclick = (e) => { if (e.target === overlay) close(); };
+    textarea.onkeydown = (e) => {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); save(); }
+        if (e.key === 'Escape') close();
+    };
+
+    btnRow.appendChild(cancelBtn);
+    btnRow.appendChild(saveBtn);
+    card.appendChild(heading);
+    card.appendChild(textarea);
+    card.appendChild(btnRow);
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+    textarea.focus();
+    textarea.select();
+}
+
 function createFolderItem(folder, removeCallback, moveCallback, editCallback, moveToListCallback, addToFolderCallback) {
     const li = document.createElement('li');
     li.className = 'video-item folder-item';
@@ -199,8 +252,26 @@ function createFolderItem(folder, removeCallback, moveCallback, editCallback, mo
     const collapsed = folder.collapsed !== false;
     pill.textContent = `${collapsed ? '▶' : '▼'} ${folder.children.length} video${folder.children.length !== 1 ? 's' : ''}`;
 
+    const renameBtn = document.createElement('button');
+    renameBtn.className = 'folder-rename-btn';
+    renameBtn.textContent = '✎';
+    renameBtn.title = 'Rename folder';
+    renameBtn.onclick = (e) => {
+        e.stopPropagation();
+        showRenameDialog(folder.title, (newTitle) => {
+            if (newTitle && newTitle !== folder.title) {
+                editCallback(folder.id, newTitle);
+            }
+        });
+    };
+
+    const pillRow = document.createElement('div');
+    pillRow.className = 'folder-pill-row';
+    pillRow.appendChild(pill);
+    pillRow.appendChild(renameBtn);
+
     thumbWrap.appendChild(img);
-    thumbWrap.appendChild(pill);
+    thumbWrap.appendChild(pillRow);
 
     const infoDiv = document.createElement('div');
     infoDiv.className = 'video-info';

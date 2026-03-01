@@ -169,7 +169,6 @@
 }
 
 .folder-pill {
-    margin-top: 4px;
     padding: 2px 10px;
     border-radius: 10px;
     background: rgba(0, 0, 0, 0.06);
@@ -179,6 +178,29 @@
     white-space: nowrap;
     text-align: center;
     cursor: pointer;
+}
+
+.folder-pill-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.folder-rename-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    color: #888;
+    padding: 2px 4px;
+    border-radius: 4px;
+    line-height: 1;
+}
+
+.folder-rename-btn:hover {
+    color: #333;
+    background: rgba(0, 0, 0, 0.06);
 }
 
 .folder-children {
@@ -257,4 +279,179 @@
 
 .folder-child-menu .menu-text {
     font-size: 13px;
+}
+
+/* ── Rename Dialog ── */
+.rename-dialog-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.rename-dialog-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    width: 90%;
+    max-width: 380px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
+
+.rename-dialog-heading {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: #222;
+}
+
+.rename-dialog-input {
+    width: 100%;
+    font-size: 0.95rem;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    resize: vertical;
+    font-family: inherit;
+    box-sizing: border-box;
+    line-height: 1.4;
+}
+
+.rename-dialog-input:focus {
+    outline: none;
+    border-color: #cc0000;
+}
+
+.rename-dialog-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.rename-dialog-btn {
+    padding: 7px 18px;
+    border-radius: 10px;
+    border: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.rename-dialog-btn.cancel {
+    background: #f0f0f0;
+    color: #555;
+}
+
+.rename-dialog-btn.cancel:hover {
+    background: #e4e4e4;
+}
+
+.rename-dialog-btn.save {
+    background: #cc0000;
+    color: white;
+}
+
+.rename-dialog-btn.save:hover {
+    background: #aa0000;
+}
+
+/* ── Rename Dialog: Dark ── */
+body.dark .rename-dialog-card {
+    background: #1a1a2e;
+    color: #e0e0e0;
+}
+
+body.dark .rename-dialog-heading {
+    color: #e0e0e0;
+}
+
+body.dark .rename-dialog-input {
+    background: #22223a;
+    border-color: #2a2a3e;
+    color: #e0e0e0;
+}
+
+body.dark .rename-dialog-input:focus {
+    border-color: #ff4444;
+}
+
+body.dark .rename-dialog-btn.cancel {
+    background: #2a2a3e;
+    color: #ccc;
+}
+
+body.dark .rename-dialog-btn.cancel:hover {
+    background: #3a3a4e;
+}
+
+/* ── Rename Dialog: Neumorphic ── */
+body.neumorphic .rename-dialog-card {
+    background: #e0e5ec;
+    border-radius: 16px;
+    box-shadow: 9px 9px 16px #9baec8, -9px -9px 16px #ffffff;
+    color: #4a4a4a;
+}
+
+body.neumorphic .rename-dialog-heading {
+    color: #4a4a4a;
+}
+
+body.neumorphic .rename-dialog-input {
+    background: #e0e5ec;
+    border: none;
+    border-radius: 10px;
+    box-shadow: inset 2px 2px 5px #cbced1, inset -2px -2px 5px #ffffff;
+    color: #4a4a4a;
+}
+
+body.neumorphic .rename-dialog-input:focus {
+    box-shadow: inset 4px 4px 8px #cbced1, inset -4px -4px 8px #ffffff;
+    border: none;
+}
+
+body.neumorphic .rename-dialog-btn.cancel {
+    background: #e0e5ec;
+    box-shadow: 4px 4px 8px #9baec8, -4px -4px 8px #ffffff;
+    color: #4a4a4a;
+}
+
+body.neumorphic .rename-dialog-btn.save {
+    box-shadow: 4px 4px 8px #9baec8, -4px -4px 8px #ffffff;
+}
+
+/* ── Rename Dialog: Dark Neumorphic ── */
+body.dark.neumorphic .rename-dialog-card {
+    background: #2a2d32;
+    box-shadow: 9px 9px 16px #1e2024, -9px -9px 16px #363a40;
+    color: #d0d0d0;
+}
+
+body.dark.neumorphic .rename-dialog-heading {
+    color: #d0d0d0;
+}
+
+body.dark.neumorphic .rename-dialog-input {
+    background: #2a2d32;
+    border: none;
+    box-shadow: inset 2px 2px 5px #1e2024, inset -2px -2px 5px #363a40;
+    color: #d0d0d0;
+}
+
+body.dark.neumorphic .rename-dialog-input:focus {
+    box-shadow: inset 4px 4px 8px #1e2024, inset -4px -4px 8px #363a40;
+    border: none;
+}
+
+body.dark.neumorphic .rename-dialog-btn.cancel {
+    background: #2a2d32;
+    box-shadow: 4px 4px 8px #1e2024, -4px -4px 8px #363a40;
+    color: #d0d0d0;
+}
+
+body.dark.neumorphic .rename-dialog-btn.save {
+    box-shadow: 4px 4px 8px #1e2024, -4px -4px 8px #363a40;
 }

@@ -308,7 +308,6 @@ h2.shift-up,
 }
 
 .folder-pill {
-    margin-top: 4px;
     padding: 2px 10px;
     border-radius: 10px;
     background: rgba(0, 0, 0, 0.06);
@@ -318,6 +317,29 @@ h2.shift-up,
     white-space: nowrap;
     text-align: center;
     cursor: pointer;
+}
+
+.folder-pill-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.folder-rename-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    color: #888;
+    padding: 2px 4px;
+    border-radius: 4px;
+    line-height: 1;
+}
+
+.folder-rename-btn:hover {
+    color: #333;
+    background: rgba(0, 0, 0, 0.06);
 }
 
 .folder-children {
@@ -399,4 +421,82 @@ h2.shift-up,
 .folder-child-menu .menu-text {
     display: inline;
     font-size: 13px;
+}
+
+/* ── Rename Dialog ── */
+.rename-dialog-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.rename-dialog-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    width: 90%;
+    max-width: 420px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
+
+.rename-dialog-heading {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: #222;
+}
+
+.rename-dialog-input {
+    width: 100%;
+    font-size: 0.95rem;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    resize: vertical;
+    font-family: inherit;
+    box-sizing: border-box;
+    line-height: 1.4;
+}
+
+.rename-dialog-input:focus {
+    outline: none;
+    border-color: #cc0000;
+}
+
+.rename-dialog-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.rename-dialog-btn {
+    padding: 7px 18px;
+    border-radius: 10px;
+    border: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.rename-dialog-btn.cancel {
+    background: #f0f0f0;
+    color: #555;
+}
+
+.rename-dialog-btn.cancel:hover {
+    background: #e4e4e4;
+}
+
+.rename-dialog-btn.save {
+    background: #cc0000;
+    color: white;
+}
+
+.rename-dialog-btn.save:hover {
+    background: #aa0000;
 }

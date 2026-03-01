@@ -348,6 +348,7 @@ export default function HomeScreen({ onSettings, theme, colorScheme, onToggleCol
                     dragHandlers={isSearching ? undefined : dragHandlers}
                     onToggle={() => toggleFolder(item.id)}
                     onChildMenu={(action, childVideo) => handleFolderChildMenu(action, childVideo, item.id)}
+                    onRename={(f) => { setSelectedVideo(f); setEditTitleVisible(true); }}
                 />
             );
         }
