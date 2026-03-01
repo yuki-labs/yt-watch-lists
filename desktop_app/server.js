@@ -187,15 +187,10 @@ function startServer(port, onSync, getSavePath, thumbnailsPath, listHandlers) {
                     try {
                         const path = require('path');
                         const oldContent = fs.readFileSync(savePath, 'utf-8');
-                        // Handle legacy array format vs new object format
                         let oldVideos = [];
                         try {
                             const parsed = JSON.parse(oldContent);
-                            if (Array.isArray(parsed)) {
-                                oldVideos = parsed;
-                            } else {
-                                oldVideos = parsed.videos || [];
-                            }
+                            oldVideos = Array.isArray(parsed) ? parsed : (parsed.videos || []);
                         } catch (e) { }
 
                         const newIds = new Set(videos.map(v => v.id));
@@ -213,7 +208,6 @@ function startServer(port, onSync, getSavePath, thumbnailsPath, listHandlers) {
                     }
                 }
 
-                // Atomic write combined object
                 // Filter videos using timestamp-based tombstone logic
                 const cleanedVideos = mergedVideos.filter(v => {
                     const tombstoneTs = mergedDeletedVideos[v.id];
@@ -222,15 +216,14 @@ function startServer(port, onSync, getSavePath, thumbnailsPath, listHandlers) {
                     return addedAt > tombstoneTs;
                 });
 
-                const fileData = {
-                    videos: cleanedVideos,
-                    timestamp: clientTimestamp,
-                    deletedVideos: mergedDeletedVideos
-                };
-
+                // Atomic write as plain array
                 const tempPath = `${savePath}.tmp`;
-                fs.writeFileSync(tempPath, JSON.stringify(fileData, null, 2));
+                fs.writeFileSync(tempPath, JSON.stringify(cleanedVideos, null, 2));
                 fs.renameSync(tempPath, savePath);
+
+                // Save tombstones to separate file
+                const tombstonePath = savePath.replace('.json', '_tombstones.json');
+                fs.writeFileSync(tombstonePath, JSON.stringify(mergedDeletedVideos, null, 2));
 
                 // Also update the in-memory videos to the cleaned version
                 currentVideos = cleanedVideos;

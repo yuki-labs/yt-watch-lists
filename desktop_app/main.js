@@ -38,26 +38,26 @@ function createWindow() {
                 if (fs.existsSync(savePath)) {
                     const fileContent = fs.readFileSync(savePath, 'utf-8');
                     let videos = [];
-                    let timestamp = 0;
                     let deletedVideos = {};
 
                     try {
                         const parsed = JSON.parse(fileContent);
-                        if (Array.isArray(parsed)) {
-                            // Legacy format
-                            videos = parsed;
-                            timestamp = 0; // Legacy data effectively "old"
-                        } else {
-                            // New format with optional deletedVideos
-                            videos = parsed.videos || [];
-                            timestamp = parsed.timestamp || 0;
-                            deletedVideos = parsed.deletedVideos || {};
-                        }
+                        videos = Array.isArray(parsed) ? parsed : (parsed.videos || []);
                     } catch (e) {
                         videos = [];
                     }
 
-                    updateVideos(videos, timestamp, deletedVideos); // Initialize server state with timestamp and tombstones
+                    // Load tombstones from separate file
+                    const tombstonePath = savePath.replace('.json', '_tombstones.json');
+                    try {
+                        if (fs.existsSync(tombstonePath)) {
+                            deletedVideos = JSON.parse(fs.readFileSync(tombstonePath, 'utf-8'));
+                        }
+                    } catch (e) {
+                        deletedVideos = {};
+                    }
+
+                    updateVideos(videos, 0, deletedVideos);
                     mainWindow.webContents.send('sync-update', videos);
                     const thumbnailsDir = path.join(path.dirname(savePath), 'thumbnails');
                     processThumbnails(videos, thumbnailsDir); // Auto-download on load
@@ -107,20 +107,13 @@ function initServer() {
             saveConfig(savePath);
             const fileContent = fs.readFileSync(savePath, 'utf-8');
             let videos = [];
-            let timestamp = 0;
             try {
                 const parsed = JSON.parse(fileContent);
-                if (Array.isArray(parsed)) {
-                    videos = parsed;
-                    timestamp = 0;
-                } else {
-                    videos = parsed.videos || [];
-                    timestamp = parsed.timestamp || 0;
-                }
+                videos = Array.isArray(parsed) ? parsed : (parsed.videos || []);
             } catch (e) {
                 videos = [];
             }
-            updateVideos(videos, timestamp);
+            updateVideos(videos, 0);
             mainWindow.webContents.send('sync-update', videos);
 
             // Recursively restart server? No, just keep running. 
@@ -131,7 +124,6 @@ function initServer() {
             // Thumbnails path might change if we supported per-list thumbnails folders, 
             // but currently they are shared in the directory.
 
-            return { success: true };
             return { success: true };
         },
         moveVideo: async (videoId, targetFilename) => {
@@ -144,7 +136,8 @@ function initServer() {
 
             // Read Current
             const currentContent = fs.readFileSync(savePath, 'utf-8');
-            let currentVideos = JSON.parse(currentContent);
+            const currentParsed = JSON.parse(currentContent);
+            let currentVideos = Array.isArray(currentParsed) ? currentParsed : (currentParsed.videos || []);
             const videoIndex = currentVideos.findIndex(v => v.id === videoId);
 
             if (videoIndex === -1) throw new Error('Video not found in current list');
@@ -154,7 +147,10 @@ function initServer() {
             // Read Target
             const targetContent = fs.readFileSync(targetPath, 'utf-8');
             let targetVideos = [];
-            try { targetVideos = JSON.parse(targetContent); } catch (e) { targetVideos = []; }
+            try {
+                const targetParsed = JSON.parse(targetContent);
+                targetVideos = Array.isArray(targetParsed) ? targetParsed : (targetParsed.videos || []);
+            } catch (e) { targetVideos = []; }
 
             // Add to Target (avoid duplicates)
             if (!targetVideos.find(v => v.id === videoId)) {
@@ -164,12 +160,12 @@ function initServer() {
             // Remove from Current
             currentVideos.splice(videoIndex, 1);
 
-            // Save Both (Atomic-ish) in new format with timestamp
-            const timestamp = Date.now();
-            fs.writeFileSync(targetPath, JSON.stringify({ videos: targetVideos, timestamp }, null, 2));
-            fs.writeFileSync(savePath, JSON.stringify({ videos: currentVideos, timestamp }, null, 2));
+            // Save Both as plain arrays
+            fs.writeFileSync(targetPath, JSON.stringify(targetVideos, null, 2));
+            fs.writeFileSync(savePath, JSON.stringify(currentVideos, null, 2));
 
             // Update State
+            const timestamp = Date.now();
             updateVideos(currentVideos, timestamp);
             mainWindow.webContents.send('sync-update', currentVideos);
 
@@ -304,8 +300,7 @@ ipcMain.handle('select-file', async () => {
                 const fileContent = fs.readFileSync(savePath, 'utf-8');
                 const parsed = JSON.parse(fileContent);
                 const videos = Array.isArray(parsed) ? parsed : (parsed.videos || []);
-                const timestamp = Array.isArray(parsed) ? 0 : (parsed.timestamp || 0);
-                updateVideos(videos, timestamp);
+                updateVideos(videos, 0);
                 mainWindow.webContents.send('sync-update', videos);
                 processThumbnails(videos, thumbnailsPath); // Auto-download on load
             } catch (err) {
@@ -332,7 +327,8 @@ ipcMain.handle('save-videos', async (event, videos) => {
             if (fs.existsSync(savePath) && fs.existsSync(thumbnailsDir)) {
                 try {
                     const oldContent = fs.readFileSync(savePath, 'utf-8');
-                    const oldVideos = JSON.parse(oldContent);
+                    const oldParsed = JSON.parse(oldContent);
+                    const oldVideos = Array.isArray(oldParsed) ? oldParsed : (oldParsed.videos || []);
                     const newIds = new Set(videos.map(v => v.id));
 
                     oldVideos.forEach(v => {
@@ -348,13 +344,12 @@ ipcMain.handle('save-videos', async (event, videos) => {
                 }
             }
 
-            // Atomic write: write to temp file then rename (new format with timestamp)
-            const timestamp = Date.now();
+            // Atomic write as plain array
             const tempPath = `${savePath}.tmp`;
-            fs.writeFileSync(tempPath, JSON.stringify({ videos, timestamp }, null, 2));
+            fs.writeFileSync(tempPath, JSON.stringify(videos, null, 2));
             fs.renameSync(tempPath, savePath);
 
-            updateVideos(videos, timestamp); // Update server state
+            updateVideos(videos, Date.now()); // Update server state
 
             // Auto-download on save
             processThumbnails(videos, thumbnailsDir);
@@ -448,17 +443,14 @@ ipcMain.handle('switch-list', async (event, filename) => {
         // Load Data
         const fileContent = fs.readFileSync(savePath, 'utf-8');
         let videos = [];
-        let timestamp = 0;
         try {
             const parsed = JSON.parse(fileContent);
             videos = Array.isArray(parsed) ? parsed : (parsed.videos || []);
-            timestamp = Array.isArray(parsed) ? 0 : (parsed.timestamp || 0);
         } catch (e) {
-            videos = []; // Handle empty/corrupt files gracefully
-            timestamp = 0;
+            videos = [];
         }
 
-        updateVideos(videos, timestamp);
+        updateVideos(videos, 0);
         mainWindow.webContents.send('sync-update', videos);
 
         // Restart Server/Thumbnails context
@@ -522,7 +514,8 @@ ipcMain.handle('move-video', async (event, { videoId, targetFilename }) => {
 
         // Read Current
         const currentContent = fs.readFileSync(savePath, 'utf-8');
-        let currentVideos = JSON.parse(currentContent);
+        const currentParsed = JSON.parse(currentContent);
+        let currentVideos = Array.isArray(currentParsed) ? currentParsed : (currentParsed.videos || []);
         const videoIndex = currentVideos.findIndex(v => v.id === videoId);
 
         if (videoIndex === -1) return { success: false, error: 'Video not found' };
@@ -532,7 +525,10 @@ ipcMain.handle('move-video', async (event, { videoId, targetFilename }) => {
         // Read Target
         const targetContent = fs.readFileSync(targetPath, 'utf-8');
         let targetVideos = [];
-        try { targetVideos = JSON.parse(targetContent); } catch (e) { targetVideos = []; }
+        try {
+            const targetParsed = JSON.parse(targetContent);
+            targetVideos = Array.isArray(targetParsed) ? targetParsed : (targetParsed.videos || []);
+        } catch (e) { targetVideos = []; }
 
         // Add to Target (at top of list)
         if (!targetVideos.find(v => v.id === videoId)) {
@@ -542,12 +538,12 @@ ipcMain.handle('move-video', async (event, { videoId, targetFilename }) => {
         // Remove from Current
         currentVideos.splice(videoIndex, 1);
 
-        // Save (new format with timestamp)
-        const timestamp = Date.now();
-        fs.writeFileSync(targetPath, JSON.stringify({ videos: targetVideos, timestamp }, null, 2));
-        fs.writeFileSync(savePath, JSON.stringify({ videos: currentVideos, timestamp }, null, 2));
+        // Save as plain arrays
+        fs.writeFileSync(targetPath, JSON.stringify(targetVideos, null, 2));
+        fs.writeFileSync(savePath, JSON.stringify(currentVideos, null, 2));
 
         // Update State
+        const timestamp = Date.now();
         updateVideos(currentVideos, timestamp);
         mainWindow.webContents.send('sync-update', currentVideos);
 
