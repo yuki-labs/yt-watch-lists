@@ -225,7 +225,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Scroll past spacer after initial render (hides it in neumorphic mode)
     scrollPastSpacer();
 
-    // Listen for storage changes (e.g. from background sync)
+    // Real-time updates via Server-Sent Events
+    let lastSSEVersion = 0;
+    try {
+        const eventSource = new EventSource('http://127.0.0.1:5000/events');
+        eventSource.onmessage = async (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.version && data.version !== lastSSEVersion) {
+                    lastSSEVersion = data.version;
+                    const remoteData = await fetchRemoteVideos();
+                    if (remoteData) {
+                        const videos = Array.isArray(remoteData) ? remoteData : (remoteData.videos || []);
+                        allVideos = videos;
+                        // Save locally with sync flag to prevent background auto-sync
+                        await chrome.storage.local.set({ _syncFromServer: Date.now() });
+                        await saveVideos(allVideos, Date.now());
+                        setTimeout(() => chrome.storage.local.remove('_syncFromServer'), 1000);
+                        render();
+                    }
+                }
+            } catch (e) { /* ignore parse errors */ }
+        };
+        eventSource.onerror = () => {
+            // Server disconnected, close and rely on background poller fallback
+            eventSource.close();
+        };
+    } catch (e) { /* EventSource not available or server offline */ }
+
+    // Listen for storage changes (fallback from background sync)
     chrome.storage.onChanged.addListener((changes, namespace) => {
         if (namespace === 'local' && changes.watchLaterVideos) {
             allVideos = changes.watchLaterVideos.newValue || [];

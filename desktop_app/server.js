@@ -7,6 +7,7 @@ let currentVideos = [];
 let currentTimestamp = 0;
 let currentDeletedVideos = {}; // Tombstones: { videoId: deletionTimestamp }
 let dataVersion = Date.now();
+let sseClients = []; // Connected SSE clients
 
 function updateVideos(videos, timestamp = Date.now(), deletedVideos = null) {
     currentVideos = videos;
@@ -16,6 +17,17 @@ function updateVideos(videos, timestamp = Date.now(), deletedVideos = null) {
     }
     dataVersion = Date.now();
     console.log(`Server updated. Videos: ${videos.length}, Tombstones: ${Object.keys(currentDeletedVideos).length}, Timestamp: ${currentTimestamp}`);
+
+    // Push update to all SSE clients
+    const event = JSON.stringify({ version: dataVersion });
+    sseClients = sseClients.filter(res => {
+        try {
+            res.write(`data: ${event}\n\n`);
+            return true;
+        } catch (e) {
+            return false; // Client disconnected
+        }
+    });
 }
 
 function addTombstone(videoId, timestamp = Date.now()) {
@@ -44,6 +56,21 @@ function startServer(port, onSync, getSavePath, thumbnailsPath, listHandlers) {
 
     server.get('/status', (req, res) => {
         res.send({ status: 'running', version: dataVersion });
+    });
+
+    // SSE endpoint for real-time updates
+    server.get('/events', (req, res) => {
+        res.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Access-Control-Allow-Origin': '*'
+        });
+        res.write(`data: ${JSON.stringify({ version: dataVersion })}\n\n`);
+        sseClients.push(res);
+        req.on('close', () => {
+            sseClients = sseClients.filter(c => c !== res);
+        });
     });
 
     server.get('/videos', (req, res) => {
