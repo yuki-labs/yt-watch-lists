@@ -178,6 +178,127 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     }
 });
 
+// ── Playback Queue Management ──
+let playbackState = null; // { tabId, queue: [{id,url,...}], currentIndex, mode: 'sequential'|'shuffle', playedIndices: Set }
+
+function buildYouTubeUrl(video) {
+    if (video.url) return video.url;
+    return `https://www.youtube.com/watch?v=${video.id}`;
+}
+
+function getNextIndex(state) {
+    if (state.mode === 'shuffle') {
+        // Pick a random unplayed index
+        const remaining = [];
+        for (let i = 0; i < state.queue.length; i++) {
+            if (!state.playedIndices.has(i)) remaining.push(i);
+        }
+        if (remaining.length === 0) return -1;
+        return remaining[Math.floor(Math.random() * remaining.length)];
+    } else {
+        // Sequential: next index
+        const next = state.currentIndex + 1;
+        return next < state.queue.length ? next : -1;
+    }
+}
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === 'START_PLAYBACK') {
+        const { videos, mode } = message;
+        if (!videos || videos.length === 0) {
+            sendResponse({ success: false, error: 'No videos to play' });
+            return false;
+        }
+
+        const queue = [...videos];
+        // For shuffle, randomize the first pick
+        let firstIndex = 0;
+        const playedIndices = new Set();
+        if (mode === 'shuffle') {
+            firstIndex = Math.floor(Math.random() * queue.length);
+        }
+        playedIndices.add(firstIndex);
+
+        const firstUrl = buildYouTubeUrl(queue[firstIndex]);
+
+        chrome.tabs.create({ url: firstUrl }, (tab) => {
+            playbackState = {
+                tabId: tab.id,
+                queue,
+                currentIndex: firstIndex,
+                mode,
+                playedIndices
+            };
+
+            // Notify the content script once the tab loads
+            chrome.tabs.onUpdated.addListener(function onLoad(tabId, changeInfo) {
+                if (tabId === tab.id && changeInfo.status === 'complete') {
+                    chrome.tabs.onUpdated.removeListener(onLoad);
+                    try {
+                        chrome.tabs.sendMessage(tab.id, { type: 'PLAYBACK_ACTIVATED' });
+                    } catch (e) { /* content script not ready yet, it will check on init */ }
+                }
+            });
+        });
+
+        sendResponse({ success: true });
+        return false;
+    }
+
+    if (message.type === 'IS_PLAYBACK_TAB') {
+        const isPlaybackTab = playbackState !== null && sender.tab && sender.tab.id === playbackState.tabId;
+        sendResponse({ isPlaybackTab });
+        return false;
+    }
+
+    if (message.type === 'VIDEO_ENDED') {
+        if (!playbackState || !sender.tab || sender.tab.id !== playbackState.tabId) {
+            sendResponse({ ok: false });
+            return false;
+        }
+
+        const nextIndex = getNextIndex(playbackState);
+        if (nextIndex === -1) {
+            // Queue exhausted
+            console.log('Playback queue finished.');
+            playbackState = null;
+            sendResponse({ ok: true, finished: true });
+            return false;
+        }
+
+        playbackState.currentIndex = nextIndex;
+        playbackState.playedIndices.add(nextIndex);
+        const nextUrl = buildYouTubeUrl(playbackState.queue[nextIndex]);
+        console.log(`Advancing playback to index ${nextIndex}: ${nextUrl}`);
+
+        chrome.tabs.update(playbackState.tabId, { url: nextUrl }, () => {
+            // Re-activate content script on the new page once loaded
+            chrome.tabs.onUpdated.addListener(function onLoad(tabId, changeInfo) {
+                if (tabId === playbackState?.tabId && changeInfo.status === 'complete') {
+                    chrome.tabs.onUpdated.removeListener(onLoad);
+                    try {
+                        chrome.tabs.sendMessage(tabId, { type: 'PLAYBACK_ACTIVATED' });
+                    } catch (e) { /* ignore */ }
+                }
+            });
+        });
+
+        sendResponse({ ok: true, finished: false });
+        return false;
+    }
+
+    // Let other listeners handle unrecognized messages
+    return false;
+});
+
+// Clean up playback state if the playback tab is closed
+chrome.tabs.onRemoved.addListener((tabId) => {
+    if (playbackState && playbackState.tabId === tabId) {
+        console.log('Playback tab closed, clearing state.');
+        playbackState = null;
+    }
+});
+
 async function checkServer() {
     try {
         const response = await fetch('http://127.0.0.1:5000/status');

@@ -84,3 +84,33 @@
     transition: background-color 0.2s;
     min-width: 40px;
 }
+
+/* Play / Shuffle icon buttons */
+.icon-btn {
+    flex: 0 0 auto;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #cc0000;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.15s;
+}
+
+.icon-btn:hover {
+    background-color: #aa0000;
+    transform: scale(1.05);
+}
+
+.icon-btn:active {
+    transform: scale(0.95);
+}
+
+.icon-btn svg {
+    pointer-events: none;
+}

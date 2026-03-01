@@ -35,6 +35,15 @@ body.dark .primary-btn {
     color: #fff;
 }
 
+body.dark .icon-btn {
+    background-color: #cc0000;
+    color: #fff;
+}
+
+body.dark .icon-btn:hover {
+    background-color: #ff4444;
+}
+
 body.dark .secondary-btn {
     background-color: #2a2a3e;
     color: #ccc;
@@ -220,4 +229,17 @@ body.dark.neumorphic .dropdown-item:hover {
     background-color: #2a2d32;
     box-shadow: 4px 4px 8px #1e2024,
         -4px -4px 8px #363a40;
+}
+
+body.dark.neumorphic .icon-btn {
+    background-color: #2a2d32;
+    color: #ff4444;
+    box-shadow: 6px 6px 10px #1e2024,
+        -6px -6px 10px #363a40;
+}
+
+body.dark.neumorphic .icon-btn:hover {
+    background-color: #2a2d32;
+    box-shadow: 8px 8px 14px #1e2024,
+        -8px -8px 14px #363a40;
 }

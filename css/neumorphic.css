@@ -12,6 +12,27 @@ body.neumorphic .button-group {
     margin-top: 12px;
 }
 
+body.neumorphic .icon-btn {
+    background-color: #e0e5ec;
+    color: #cc0000;
+    border-radius: 50px;
+    box-shadow: 6px 6px 10px #9baec8,
+        -6px -6px 10px #ffffff;
+}
+
+body.neumorphic .icon-btn:hover {
+    background-color: #e0e5ec;
+    transform: translateY(-2px);
+    box-shadow: 8px 8px 14px #9baec8,
+        -8px -8px 14px #ffffff;
+}
+
+body.neumorphic .icon-btn:active {
+    transform: translateY(1px);
+    box-shadow: inset 4px 4px 8px #9baec8,
+        inset -4px -4px 8px #ffffff;
+}
+
 body.neumorphic .header {
     background-color: #e0e5ec;
     /* Ensure Header stays on top of shifting content */

@@ -12,6 +12,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const searchInput = document.getElementById('search-input');
     const videoList = document.getElementById('video-list');
     const messageDiv = document.getElementById('message');
+    const playBtn = document.getElementById('play-btn');
+    const shuffleBtn = document.getElementById('shuffle-btn');
 
     let allVideos = [];
 
@@ -459,6 +461,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         await saveAndSync(allVideos);
         render();
     }
+
+    // Playback handlers
+    async function startPlayback(mode) {
+        if (allVideos.length === 0) {
+            showMessage('No videos to play.', 'error', messageDiv);
+            return;
+        }
+        try {
+            const response = await chrome.runtime.sendMessage({
+                type: 'START_PLAYBACK',
+                videos: allVideos,
+                mode
+            });
+            if (response && response.success) {
+                showMessage(mode === 'shuffle' ? 'Shuffle playing...' : 'Playing all...', 'success', messageDiv);
+            } else {
+                showMessage(response?.error || 'Failed to start playback.', 'error', messageDiv);
+            }
+        } catch (e) {
+            console.error('Playback error:', e);
+            showMessage('Failed to start playback.', 'error', messageDiv);
+        }
+    }
+
+    playBtn.addEventListener('click', () => startPlayback('sequential'));
+    shuffleBtn.addEventListener('click', () => startPlayback('shuffle'));
 
     async function handleMove(videoId, direction) {
         const index = allVideos.findIndex(v => v.id === videoId);
