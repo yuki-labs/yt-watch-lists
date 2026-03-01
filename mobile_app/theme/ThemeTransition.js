@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useRef, useCallback } from 'react';
+import React, { createContext, useContext, useRef, useCallback, useEffect } from 'react';
 import { Animated } from 'react-native';
 
 // 0 = M3 Expressive (default), 1 = Neumorphic
@@ -58,6 +58,15 @@ export function ThemeTransitionProvider({ children, theme, onThemeChange }) {
         // Commit theme change immediately so the state is in sync
         onThemeChange(newTheme);
     }, [progress, onThemeChange]);
+
+    // Sync progress when theme prop changes externally (e.g., loaded from storage)
+    useEffect(() => {
+        const expected = theme === 'neumorphic' ? 1 : 0;
+        if (currentTheme.current !== theme) {
+            currentTheme.current = theme;
+            progress.setValue(expected);
+        }
+    }, [theme, progress]);
 
     return (
         <ThemeTransitionContext.Provider
