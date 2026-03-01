@@ -130,6 +130,10 @@ body.dark.neumorphic .header {
     background-color: #2a2d32;
 }
 
+body.dark.neumorphic #video-list {
+    box-shadow: inset 5px 5px 10px #1e2024, inset -5px -5px 10px #363a40;
+}
+
 body.dark.neumorphic .video-item {
     background-color: #2a2d32;
     box-shadow: 9px 9px 16px #1e2024,

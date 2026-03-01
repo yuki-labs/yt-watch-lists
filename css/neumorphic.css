@@ -17,7 +17,10 @@ body.neumorphic .header {
 
 body.neumorphic #video-list {
     background: transparent;
-    box-shadow: none;
+    box-shadow: inset 5px 5px 10px #9baec8, inset -5px -5px 10px #ffffff;
+    border-radius: 15px;
+    padding: 16px;
+    margin: 0 -4px;
 }
 
 /* 1. CARDS (Video Items) - Convex (Pop Out) */
