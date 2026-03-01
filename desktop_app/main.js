@@ -81,7 +81,7 @@ function initServer() {
             if (!savePath) throw new Error('No directory selected');
             const dir = path.dirname(savePath);
             const fs = require('fs');
-            const files = fs.readdirSync(dir).filter(f => f.endsWith('.json') && f !== 'package.json' && f !== 'package-lock.json');
+            const files = fs.readdirSync(dir).filter(f => f.endsWith('.json') && f !== 'package.json' && f !== 'package-lock.json' && !f.endsWith('_tombstones.json'));
             return { success: true, lists: files, current: path.basename(savePath) };
         },
         createList: async (filename) => {
@@ -407,7 +407,7 @@ ipcMain.handle('get-lists', async () => {
     const dir = path.dirname(savePath);
     try {
         const fs = require('fs');
-        const files = fs.readdirSync(dir).filter(f => f.endsWith('.json') && f !== 'package.json' && f !== 'package-lock.json');
+        const files = fs.readdirSync(dir).filter(f => f.endsWith('.json') && f !== 'package.json' && f !== 'package-lock.json' && !f.endsWith('_tombstones.json'));
         return { success: true, lists: files, current: path.basename(savePath) };
     } catch (e) {
         return { success: false, error: e.message };
