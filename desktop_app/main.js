@@ -26,24 +26,18 @@ function createWindow() {
 
         event.preventDefault();
 
-        dialog.showMessageBox(mainWindow, {
-            type: 'question',
-            buttons: ['Minimize to Tray', 'Quit', 'Cancel'],
-            defaultId: 0,
-            cancelId: 2,
-            title: 'Close Watch Later',
-            message: 'What would you like to do?',
-            detail: 'Minimizing to tray keeps the sync server running for the browser extension and mobile app.'
-        }).then(({ response }) => {
-            if (response === 0) {
-                // Minimize to tray
+        // Send to renderer to show a themed dialog
+        mainWindow.webContents.send('show-quit-dialog');
+
+        // One-time listener for the response
+        ipcMain.once('quit-dialog-response', (evt, choice) => {
+            if (choice === 'minimize') {
                 mainWindow.hide();
-            } else if (response === 1) {
-                // Quit completely
+            } else if (choice === 'quit') {
                 isQuitting = true;
                 app.quit();
             }
-            // response === 2 (Cancel) — do nothing
+            // 'cancel' — do nothing
         });
     });
 

@@ -211,3 +211,80 @@ if (listBtn) {
 //    if (threeManager.enabled) threeManager.scan();
 // });
 // observer.observe(videoList, { childList: true, subtree: true });
+
+// Quit Dialog (themed)
+const { ipcRenderer } = window.require('electron');
+ipcRenderer.on('show-quit-dialog', () => {
+    // Remove any existing quit dialog
+    const existing = document.getElementById('quit-dialog-overlay');
+    if (existing) existing.remove();
+
+    const isNeu = document.body.classList.contains('neumorphic');
+
+    const overlay = document.createElement('div');
+    overlay.id = 'quit-dialog-overlay';
+    Object.assign(overlay.style, {
+        position: 'fixed', top: '0', left: '0', width: '100%', height: '100%',
+        backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex',
+        justifyContent: 'center', alignItems: 'center', zIndex: '9999'
+    });
+
+    const modal = document.createElement('div');
+    Object.assign(modal.style, {
+        padding: '24px', borderRadius: isNeu ? '20px' : '10px', width: '320px',
+        textAlign: 'center',
+        backgroundColor: isNeu ? '#e0e5ec' : 'white',
+        color: isNeu ? '#4a4a4a' : '#333',
+        boxShadow: isNeu
+            ? '9px 9px 16px #9baec8, -9px -9px 16px #ffffff'
+            : '0 4px 20px rgba(0,0,0,0.2)',
+        border: isNeu ? 'none' : '1px solid #eee'
+    });
+
+    const title = document.createElement('h3');
+    title.textContent = 'Close Watch Later';
+    title.style.marginTop = '0';
+
+    const desc = document.createElement('p');
+    desc.textContent = 'Minimizing to tray keeps the sync server running for the browser extension and mobile app.';
+    Object.assign(desc.style, { fontSize: '0.85rem', color: isNeu ? '#6a6a6a' : '#888', margin: '8px 0 20px' });
+
+    const btnStyle = (extra = {}) => Object.assign({
+        padding: '10px 0', width: '100%', border: 'none', borderRadius: isNeu ? '50px' : '6px',
+        cursor: 'pointer', fontSize: '0.95rem', marginBottom: '8px',
+        backgroundColor: isNeu ? '#e0e5ec' : '#f5f5f5',
+        color: isNeu ? '#4a4a4a' : '#333',
+        boxShadow: isNeu ? '4px 4px 8px #9baec8, -4px -4px 8px #ffffff' : 'none'
+    }, extra);
+
+    const minimizeBtn = document.createElement('button');
+    minimizeBtn.textContent = 'Minimize to Tray';
+    Object.assign(minimizeBtn.style, btnStyle({
+        backgroundColor: isNeu ? '#e0e5ec' : '#cc0000', color: isNeu ? '#4a4a4a' : 'white',
+        fontWeight: 'bold'
+    }));
+
+    const quitBtn = document.createElement('button');
+    quitBtn.textContent = 'Quit Completely';
+    Object.assign(quitBtn.style, btnStyle());
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    Object.assign(cancelBtn.style, btnStyle({
+        backgroundColor: 'transparent', boxShadow: 'none', color: isNeu ? '#888' : '#999'
+    }));
+
+    const respond = (choice) => { overlay.remove(); ipcRenderer.send('quit-dialog-response', choice); };
+    minimizeBtn.onclick = () => respond('minimize');
+    quitBtn.onclick = () => respond('quit');
+    cancelBtn.onclick = () => respond('cancel');
+    overlay.onclick = (e) => { if (e.target === overlay) respond('cancel'); };
+
+    modal.appendChild(title);
+    modal.appendChild(desc);
+    modal.appendChild(minimizeBtn);
+    modal.appendChild(quitBtn);
+    modal.appendChild(cancelBtn);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+});

@@ -204,35 +204,40 @@ export function showListModal(lists, current, onSelect, titleText = 'Select List
     }
 
     function enterDeleteConfirm(itemContainer, filename, nameSpan, renameBtn, deleteBtn) {
-        if (filename === current) {
-            alert('Cannot delete the active list. Switch to another list first.');
-            return;
-        }
+        // Save original text and swap in-place to preserve layout
+        const originalText = nameSpan.textContent;
+        nameSpan.textContent = `Delete ${filename.replace('.json', '')}?`;
+        nameSpan.style.color = '#e74c3c';
 
-        itemContainer.innerHTML = '';
-
-        const prompt = document.createElement('span');
-        prompt.textContent = `Delete ${filename.replace('.json', '')}?`;
-        prompt.style.color = '#e74c3c';
-
+        // Replace rename button with confirm
         const confirmBtn = document.createElement('button');
         confirmBtn.textContent = '✔';
         confirmBtn.style.background = 'none';
         confirmBtn.style.border = 'none';
         confirmBtn.style.cursor = 'pointer';
         confirmBtn.style.color = 'red';
+        confirmBtn.style.marginLeft = '10px';
+        renameBtn.replaceWith(confirmBtn);
 
+        // Replace delete button with cancel
         const cancelBtn = document.createElement('button');
         cancelBtn.textContent = '✘';
         cancelBtn.style.background = 'none';
         cancelBtn.style.border = 'none';
         cancelBtn.style.cursor = 'pointer';
+        cancelBtn.style.marginLeft = '5px';
+        deleteBtn.replaceWith(cancelBtn);
 
         const doDelete = async () => {
             try {
+                const isActive = (filename === current);
                 const res = await deleteList(filename);
                 if (res.success) {
-                    itemContainer.remove();
+                    if (isActive) {
+                        modalOverlay.remove();
+                    } else {
+                        itemContainer.remove();
+                    }
                 } else {
                     alert('Delete failed: ' + res.error);
                     resetDelete();
@@ -244,18 +249,14 @@ export function showListModal(lists, current, onSelect, titleText = 'Select List
         };
 
         const resetDelete = () => {
-            itemContainer.innerHTML = '';
-            itemContainer.appendChild(nameSpan);
-            itemContainer.appendChild(renameBtn);
-            itemContainer.appendChild(deleteBtn);
+            nameSpan.textContent = originalText;
+            nameSpan.style.color = '';
+            confirmBtn.replaceWith(renameBtn);
+            cancelBtn.replaceWith(deleteBtn);
         };
 
         confirmBtn.onclick = (e) => { e.stopPropagation(); doDelete(); };
         cancelBtn.onclick = (e) => { e.stopPropagation(); resetDelete(); };
-
-        itemContainer.appendChild(prompt);
-        itemContainer.appendChild(confirmBtn);
-        itemContainer.appendChild(cancelBtn);
     }
 
     const newBtn = document.createElement('button');

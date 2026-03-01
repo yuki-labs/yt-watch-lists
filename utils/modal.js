@@ -179,12 +179,6 @@ export function showListModal(lists, current, messageDiv, onUpdate, actionCallba
     }
 
     function enterDeleteConfirm(itemContainer, filename, nameSpan, renameBtn, deleteBtn) {
-        // Don't allow deleting the active list
-        if (filename === current) {
-            if (messageDiv) showMessage('Cannot delete the active list. Switch to another list first.', 'error', messageDiv);
-            return;
-        }
-
         itemContainer.innerHTML = '';
 
         const prompt = document.createElement('span');
@@ -202,11 +196,28 @@ export function showListModal(lists, current, messageDiv, onUpdate, actionCallba
 
         const doDelete = async () => {
             try {
+                const isActive = (filename === current);
                 const res = await deleteList(filename);
                 if (res.success) {
-                    if (messageDiv) showMessage(`Deleted ${filename}`, 'success', messageDiv);
-                    // Remove the item from the modal
-                    itemContainer.remove();
+                    if (isActive) {
+                        // Server auto-switched to another list, close modal and refresh
+                        modalOverlay.remove();
+                        const remoteData = await fetchRemoteVideos();
+                        if (onUpdate && remoteData) {
+                            let videos = [];
+                            let timestamp = 0;
+                            if (Array.isArray(remoteData)) {
+                                videos = remoteData;
+                            } else {
+                                videos = remoteData.videos || [];
+                                timestamp = remoteData.timestamp || 0;
+                            }
+                            await onUpdate(videos, timestamp);
+                        }
+                    } else {
+                        if (messageDiv) showMessage(`Deleted ${filename}`, 'success', messageDiv);
+                        itemContainer.remove();
+                    }
                 } else {
                     if (messageDiv) showMessage('Delete failed: ' + res.error, 'error', messageDiv);
                     resetDelete();
