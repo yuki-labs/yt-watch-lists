@@ -275,7 +275,7 @@ function createFolderItem(folder, removeCallback, moveCallback, editCallback, mo
         childrenDiv.style.display = 'none';
     }
 
-    renderFolderChildren(childrenDiv, folder, removeCallback, moveCallback, editCallback);
+    renderFolderChildren(childrenDiv, folder, removeCallback, moveCallback, editCallback, moveToListCallback, addToFolderCallback);
 
     // Toggle expand/collapse
     header.addEventListener('click', (e) => {
@@ -309,112 +309,17 @@ function updateFolderItem(li, folder, removeCallback, moveCallback, editCallback
     // Update children
     const childrenDiv = li.querySelector('.folder-children');
     if (childrenDiv) {
-        renderFolderChildren(childrenDiv, folder, removeCallback, moveCallback, editCallback);
+        renderFolderChildren(childrenDiv, folder, removeCallback, moveCallback, editCallback, moveToListCallback, addToFolderCallback);
     }
 }
 
-function renderFolderChildren(container, folder, removeCallback, moveCallback, editCallback) {
+function renderFolderChildren(container, folder, removeCallback, moveCallback, editCallback, moveToListCallback, addToFolderCallback) {
     container.innerHTML = '';
     folder.children.forEach(child => {
-        const childEl = document.createElement('div');
-        childEl.className = 'folder-child-item';
-        childEl.dataset.id = child.id;
-
-        const img = document.createElement('img');
-        const localThumbUrl = `http://localhost:5000/thumbnails/${child.id}.jpg`;
-        const remoteThumbUrl = child.thumbnail || `https://i.ytimg.com/vi/${child.id}/mqdefault.jpg`;
-        img.src = localThumbUrl;
-        img.onerror = () => { if (img.src !== remoteThumbUrl) img.src = remoteThumbUrl; };
-        img.className = 'folder-child-thumbnail';
-
-        const info = document.createElement('div');
-        info.className = 'folder-child-info';
-
-        const a = document.createElement('a');
-        a.href = child.url;
-        a.className = 'video-link';
-        a.textContent = child.title;
-        a.target = '_blank';
-        a.title = child.title;
-        info.appendChild(a);
-
-        const menuBtn = document.createElement('button');
-        menuBtn.className = 'menu-btn';
-        menuBtn.innerHTML = '&#8942;';
-        menuBtn.title = 'Options';
-        menuBtn.onclick = (e) => {
-            e.stopPropagation();
-            // Simple dropdown for child — toggle
-            const existingMenu = childEl.querySelector('.folder-child-menu');
-            if (existingMenu) {
-                existingMenu.remove();
-                return;
-            }
-            // Close other child menus
-            container.querySelectorAll('.folder-child-menu').forEach(m => m.remove());
-
-            const menu = document.createElement('div');
-            menu.className = 'folder-child-menu';
-            const childOpts = [
-                { label: 'Open', icon: '❐', action: () => { window.open(child.url, '_blank'); menu.remove(); } },
-                { label: 'Edit Title', icon: '✎', action: () => { menu.remove(); enterChildEditMode(child, childEl, info, a, editCallback); } },
-                { label: 'Move Up', icon: '↑', action: () => { menu.remove(); moveCallback(child.id, 'up'); } },
-                { label: 'Move Down', icon: '↓', action: () => { menu.remove(); moveCallback(child.id, 'down'); } },
-                { label: 'Remove', icon: '🗑', action: () => { menu.remove(); removeCallback(child.id); }, isDelete: true },
-            ];
-            childOpts.forEach(opt => {
-                const btn = document.createElement('button');
-                btn.className = 'dropdown-item' + (opt.isDelete ? ' delete-item' : '');
-                btn.title = opt.label;
-                const iconSpan = document.createElement('span');
-                iconSpan.className = 'menu-icon';
-                iconSpan.textContent = opt.icon;
-                const textSpan = document.createElement('span');
-                textSpan.className = 'menu-text';
-                textSpan.textContent = opt.label;
-                btn.appendChild(iconSpan);
-                btn.appendChild(textSpan);
-                btn.onclick = (e) => { e.stopPropagation(); opt.action(); };
-                menu.appendChild(btn);
-            });
-            childEl.appendChild(menu);
-        };
-
-        childEl.appendChild(img);
-        childEl.appendChild(info);
-        childEl.appendChild(menuBtn);
-        container.appendChild(childEl);
+        const childLi = createVideoItem(child, removeCallback, moveCallback, editCallback, moveToListCallback, addToFolderCallback);
+        childLi.classList.add('folder-child-video');
+        container.appendChild(childLi);
     });
-}
-
-function enterChildEditMode(video, container, infoDiv, linkEl, editCallback) {
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.value = video.title;
-    input.className = 'modal-rename-input';
-    input.style.width = '100%';
-
-    const save = () => {
-        const newTitle = input.value.trim();
-        if (newTitle && newTitle !== video.title) {
-            editCallback(video.id, newTitle);
-        }
-        cleanup();
-    };
-    const cleanup = () => {
-        infoDiv.innerHTML = '';
-        infoDiv.appendChild(linkEl);
-    };
-
-    input.onkeydown = (e) => {
-        if (e.key === 'Enter') save();
-        if (e.key === 'Escape') cleanup();
-    };
-    input.onclick = (e) => e.stopPropagation();
-
-    infoDiv.innerHTML = '';
-    infoDiv.appendChild(input);
-    input.focus();
 }
 
 function createVideoItem(video, removeCallback, moveCallback, editCallback, moveToListCallback, addToFolderCallback) {

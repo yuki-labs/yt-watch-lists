@@ -57,7 +57,7 @@ export function renderList(videos, listElement, moveCallback, removeCallback, ed
             }
         } else {
             if (video.type === 'folder') {
-                updateFolderItem(li, video, removeCallback, moveCallback, editCallback);
+                updateFolderItem(li, video, removeCallback, moveCallback, editCallback, moveToListCallback, addToFolderCallback);
             } else {
                 // Update Title if changed
                 const titleEl = li.querySelector('.video-title');
@@ -221,7 +221,7 @@ function createFolderItem(folder, removeCallback, moveCallback, editCallback, mo
         childrenDiv.style.display = 'none';
     }
 
-    renderFolderChildren(childrenDiv, folder, removeCallback, moveCallback, editCallback);
+    renderFolderChildren(childrenDiv, folder, removeCallback, moveCallback, editCallback, moveToListCallback, addToFolderCallback);
 
     header.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -236,100 +236,23 @@ function createFolderItem(folder, removeCallback, moveCallback, editCallback, mo
     return li;
 }
 
-function updateFolderItem(li, folder, removeCallback, moveCallback, editCallback) {
+function updateFolderItem(li, folder, removeCallback, moveCallback, editCallback, moveToListCallback, addToFolderCallback) {
     li._folderData = folder;
     const titleEl = li.querySelector('.folder-title');
     if (titleEl && titleEl.textContent !== folder.title) titleEl.textContent = folder.title;
     const subtitle = li.querySelector('.folder-subtitle');
     if (subtitle) subtitle.textContent = `${folder.children.length} video${folder.children.length !== 1 ? 's' : ''}`;
     const childrenDiv = li.querySelector('.folder-children');
-    if (childrenDiv) renderFolderChildren(childrenDiv, folder, removeCallback, moveCallback, editCallback);
+    if (childrenDiv) renderFolderChildren(childrenDiv, folder, removeCallback, moveCallback, editCallback, moveToListCallback, addToFolderCallback);
 }
 
-function renderFolderChildren(container, folder, removeCallback, moveCallback, editCallback) {
+function renderFolderChildren(container, folder, removeCallback, moveCallback, editCallback, moveToListCallback, addToFolderCallback) {
     container.innerHTML = '';
     folder.children.forEach(child => {
-        const childEl = document.createElement('div');
-        childEl.className = 'folder-child-item';
-        childEl.dataset.id = child.id;
-
-        const img = document.createElement('img');
-        const localThumbUrl = `http://localhost:5000/thumbnails/${child.id}.jpg`;
-        const remoteThumbUrl = child.thumbnail || `https://i.ytimg.com/vi/${child.id}/mqdefault.jpg`;
-        img.src = localThumbUrl;
-        img.onerror = () => { if (img.src !== remoteThumbUrl) img.src = remoteThumbUrl; };
-        img.className = 'folder-child-thumbnail';
-
-        const info = document.createElement('div');
-        info.className = 'folder-child-info';
-        const title = document.createElement('div');
-        title.className = 'video-title';
-        title.textContent = child.title;
-        info.appendChild(title);
-
-        const menuBtn = document.createElement('button');
-        menuBtn.className = 'menu-btn';
-        menuBtn.innerHTML = '&#8942;';
-        menuBtn.onclick = (e) => {
-            e.stopPropagation();
-            const existingMenu = childEl.querySelector('.folder-child-menu');
-            if (existingMenu) { existingMenu.remove(); return; }
-            container.querySelectorAll('.folder-child-menu').forEach(m => m.remove());
-
-            const menu = document.createElement('div');
-            menu.className = 'folder-child-menu';
-            const childOpts = [
-                { label: 'Edit Title', icon: '✎', action: () => { menu.remove(); enterChildEditMode(child, childEl, info, title, editCallback); } },
-                { label: 'Move Up', icon: '↑', action: () => { menu.remove(); moveCallback(child.id, 'up'); } },
-                { label: 'Move Down', icon: '↓', action: () => { menu.remove(); moveCallback(child.id, 'down'); } },
-                { label: 'Remove', icon: '🗑', action: () => { menu.remove(); removeCallback(child.id); }, isDelete: true },
-            ];
-            childOpts.forEach(opt => {
-                const btn = document.createElement('button');
-                btn.className = 'dropdown-item' + (opt.isDelete ? ' delete-item' : '');
-                btn.title = opt.label;
-                const iconSpan = document.createElement('span');
-                iconSpan.className = 'menu-icon';
-                iconSpan.textContent = opt.icon;
-                const textSpan = document.createElement('span');
-                textSpan.className = 'menu-text';
-                textSpan.textContent = opt.label;
-                btn.appendChild(iconSpan);
-                btn.appendChild(textSpan);
-                btn.onclick = (e) => { e.stopPropagation(); opt.action(); };
-                menu.appendChild(btn);
-            });
-            childEl.appendChild(menu);
-        };
-
-        childEl.appendChild(img);
-        childEl.appendChild(info);
-        childEl.appendChild(menuBtn);
-        container.appendChild(childEl);
+        const childLi = createVideoItem(child, moveCallback, removeCallback, editCallback, moveToListCallback, addToFolderCallback);
+        childLi.classList.add('folder-child-video');
+        container.appendChild(childLi);
     });
-}
-
-function enterChildEditMode(video, container, infoDiv, titleEl, editCallback) {
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.value = video.title;
-    input.style.width = '100%';
-    input.style.padding = '4px';
-    input.style.fontSize = '1rem';
-
-    const save = () => {
-        const newTitle = input.value.trim();
-        if (newTitle && newTitle !== video.title) editCallback(video.id, newTitle);
-        cleanup();
-    };
-    const cleanup = () => { infoDiv.innerHTML = ''; infoDiv.appendChild(titleEl); };
-
-    input.onkeydown = (e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') cleanup(); };
-    input.onclick = (e) => e.stopPropagation();
-
-    infoDiv.innerHTML = '';
-    infoDiv.appendChild(input);
-    input.focus();
 }
 
 function createVideoItem(video, moveCallback, removeCallback, editCallback, moveToListCallback, addToFolderCallback) {
