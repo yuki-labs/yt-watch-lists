@@ -296,7 +296,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Fetch lists again to be fresh
         const result = await getLists();
         if (result.success) {
-            showListModal(result.lists, result.current, messageDiv, null, async (targetList) => {
+            const filteredLists = result.lists.filter(f => !f.endsWith('_tombstones.json'));
+            showListModal(filteredLists, result.current, messageDiv, null, async (targetList) => {
                 if (targetList === result.current) return;
 
                 const moveResult = await import('./utils/sync.js').then(m => m.moveVideo(videoId, targetList));
@@ -452,7 +453,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         listBtn.addEventListener('click', async () => {
             const result = await getLists();
             if (result.success) {
-                showListModal(result.lists, result.current, messageDiv, (videos) => {
+                const filteredLists = result.lists.filter(f => !f.endsWith('_tombstones.json'));
+                showListModal(filteredLists, result.current, messageDiv, (videos) => {
                     allVideos = videos;
                     render();
                 });
