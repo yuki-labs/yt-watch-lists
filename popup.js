@@ -192,32 +192,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.log('Local is empty, using remote data for recovery');
                 allVideos = filterTombstoned(remoteVideos);
                 await saveVideos(allVideos, remoteTimestamp);
-            } else if (remoteTimestamp > localTimestamp) {
-                // Remote is newer, use it and update local
-                console.log('Using remote data (newer):', remoteTimestamp, '>', localTimestamp);
-                allVideos = filterTombstoned(remoteVideos);
-                await saveVideos(allVideos, remoteTimestamp);
             } else {
-                // Local is newer or equal, keep local but still filter tombstones
-                console.log('Using local data (newer or equal):', localTimestamp, '>=', remoteTimestamp);
-                allVideos = filterTombstoned(localVideos);
-
-                // Save the filtered list back to storage to remove tombstoned videos from storage
-                if (allVideos.length !== localVideos.length) {
-                    console.log('Cleaning tombstoned videos from storage:', localVideos.length - allVideos.length, 'removed');
-                    await saveVideos(allVideos, localTimestamp);
-                }
-
-                // Push local data to desktop if it's actually newer (not just equal)
-                if (localTimestamp > remoteTimestamp && allVideos.length > 0) {
-                    console.log('Pushing local data to desktop (local is newer)');
-                    try {
-                        const syncResult = await syncVideos(allVideos);
-                        console.log('Push sync result:', syncResult);
-                    } catch (e) {
-                        console.warn('Push sync failed:', e);
-                    }
-                }
+                // Server is the single source of truth while connected.
+                // Always use server data to avoid pushing stale local data back.
+                console.log('Using server data. Remote:', remoteVideos.length, 'videos, Local:', localVideos.length, 'videos');
+                allVideos = filterTombstoned(remoteVideos);
+                // Set sync flag to prevent the background auto-sync from pushing this back
+                await chrome.storage.local.set({ _syncFromServer: Date.now() });
+                await saveVideos(allVideos, remoteTimestamp || Date.now());
+                setTimeout(() => chrome.storage.local.remove('_syncFromServer'), 1000);
             }
 
             // Save merged tombstones
@@ -245,8 +228,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Listen for storage changes (e.g. from background sync)
     chrome.storage.onChanged.addListener((changes, namespace) => {
         if (namespace === 'local' && changes.watchLaterVideos) {
-            // Only update if we are not "connected" to server?
-            // Or just always update. 
             allVideos = changes.watchLaterVideos.newValue || [];
             render();
         }
@@ -341,12 +322,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const moveResult = await import('./utils/sync.js').then(m => m.moveVideo(videoId, targetList));
                 if (moveResult.success) {
                     showMessage(`Moved video to ${targetList}`, 'success', messageDiv);
-                    // Update local list (remove moved video)
+                    // Update local list (remove moved video) and persist to storage + sync
                     allVideos = allVideos.filter(v => v.id !== videoId);
-                    // Sync removal state if needed, but moveVideo on server should handle it?
-                    // Server handles removal from source list.
-                    // We just need to update local view.
-                    // Fetch from server to be safe? Or trust local removal.
+                    await saveAndSync(allVideos);
                     render();
                 } else {
                     showMessage('Error moving video: ' + moveResult.error, 'error', messageDiv);

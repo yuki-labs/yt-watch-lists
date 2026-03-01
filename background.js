@@ -142,15 +142,16 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
 // Auto-sync listener (Local -> Server)
 chrome.storage.onChanged.addListener(async (changes, namespace) => {
-    // Check for the persistent sync-from-server flag (set by both checkServer and sync.js)
+    // Skip if we're currently applying server data (in-memory flag, same context)
+    if (isSyncingFromServer) {
+        console.log("Skipping auto-sync (update came from server)");
+        return;
+    }
+    // Also check storage flag (set by popup/side panel, different context)
     const flagData = await chrome.storage.local.get('_syncFromServer');
-    if (flagData._syncFromServer) {
-        // Check if the flag was set recently (within last 500ms) to handle async timing
-        const flagAge = Date.now() - flagData._syncFromServer;
-        if (flagAge < 500) {
-            console.log("Skipping auto-sync (update came from server, flag age:", flagAge, "ms)");
-            return;
-        }
+    if (flagData._syncFromServer && (Date.now() - flagData._syncFromServer) < 2000) {
+        console.log("Skipping auto-sync (update came from side panel)");
+        return;
     }
 
     if (namespace === 'local' && changes.watchLaterVideos) {
@@ -230,53 +231,61 @@ async function checkServer() {
                     const localVideos = Array.isArray(localVideosRaw) ? localVideosRaw :
                         (localVideosRaw && localVideosRaw.videos ? localVideosRaw.videos : []);
 
-                    if (serverTimestamp > localTimestamp) {
-                        // Server is newer - use server's order but MERGE in any local videos not in server
-                        console.log("Server is newer, merging:", serverTimestamp, ">", localTimestamp);
+                    // When we detect a server version change, the desktop made a change.
+                    // Always accept server data in this case (desktop is authoritative for its own changes).
+                    // Only do timestamp comparison on forceSync (first connect) where we might have newer offline data.
+                    const shouldUseServer = forceSync ? (serverTimestamp > localTimestamp) : true;
 
-                        const serverVideoIds = new Set(serverVideos.map(v => v.id));
-                        const mergedVideos = [...serverVideos];
+                    if (shouldUseServer) {
+                        // Server data is authoritative
+                        console.log("Using server data. Force:", forceSync, "Server:", serverTimestamp, "Local:", localTimestamp);
+
+                        let finalVideos = [...serverVideos];
                         let hasLocalOnlyVideos = false;
 
-                        // Add local-only videos (not in server and not tombstoned)
-                        for (const v of localVideos) {
-                            if (!serverVideoIds.has(v.id)) {
-                                // Check if tombstoned
-                                const tombstoneTs = mergedTombstones[v.id];
-                                const addedAt = v.addedAt || 0;
-                                if (!tombstoneTs || addedAt > tombstoneTs) {
-                                    console.log("Preserving local-only video:", v.id);
-                                    mergedVideos.unshift(v); // Add to top
-                                    hasLocalOnlyVideos = true;
+                        // Only merge local-only videos on first connect (forceSync).
+                        // During regular polls, the server is authoritative — if a video
+                        // was removed server-side (e.g. moved to another list), we must
+                        // NOT re-add it from stale local data.
+                        if (forceSync) {
+                            const serverVideoIds = new Set(serverVideos.map(v => v.id));
+                            for (const v of localVideos) {
+                                if (!serverVideoIds.has(v.id)) {
+                                    const tombstoneTs = mergedTombstones[v.id];
+                                    const addedAt = v.addedAt || 0;
+                                    if (!tombstoneTs || addedAt > tombstoneTs) {
+                                        console.log("Preserving local-only video:", v.id);
+                                        finalVideos.unshift(v);
+                                        hasLocalOnlyVideos = true;
+                                    }
                                 }
                             }
                         }
 
-                        // Save merged list with NEW timestamp if we added local videos
+                        // Save with NEW timestamp if we added local videos, otherwise use server's
                         const newTimestamp = hasLocalOnlyVideos ? Date.now() : serverTimestamp;
-                        // Set persistent flag BEFORE saving so async listener sees it
-                        await chrome.storage.local.set({ _syncFromServer: Date.now() });
-                        await saveVideos(mergedVideos, newTimestamp);
+                        // Set in-memory flag to prevent auto-sync listener from pushing this back
+                        isSyncingFromServer = true;
+                        await saveVideos(finalVideos, newTimestamp);
                         await chrome.storage.local.set({ watchLaterDeletedVideos: mergedTombstones });
-                        // Clear flag after delay to allow listener to process
-                        setTimeout(() => chrome.storage.local.remove('_syncFromServer'), 1000);
+                        isSyncingFromServer = false;
 
-                        // Push merged list back to server so all platforms have same order
+                        // Push merged list back to server if we added local videos
                         if (hasLocalOnlyVideos) {
                             console.log("Pushing merged list to server for consistent ordering");
                             try {
-                                await syncVideos(mergedVideos);
+                                await syncVideos(finalVideos);
                             } catch (e) {
                                 console.warn("Push merged list failed:", e);
                             }
                         }
                     } else {
-                        console.log("Local is newer or equal, keeping local:", localTimestamp, ">=", serverTimestamp);
+                        console.log("Local is newer on first connect, keeping local:", localTimestamp, ">=", serverTimestamp);
                         // Still save merged tombstones
                         await chrome.storage.local.set({ watchLaterDeletedVideos: mergedTombstones });
 
-                        // On force sync (first connect), push local data to desktop if we have newer data
-                        if (forceSync && localVideos.length > 0) {
+                        // Push local data to desktop since we have newer data
+                        if (localVideos.length > 0) {
                             console.log("Force sync: Pushing newer local data to desktop");
                             try {
                                 await syncVideos(localVideos);
