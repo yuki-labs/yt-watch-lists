@@ -34,19 +34,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (settingsCog && settingsPanel) {
         settingsCog.addEventListener('click', (e) => {
             e.stopPropagation();
-            const isOpen = !settingsPanel.classList.contains('hidden');
+            const isOpen = settingsPanel.classList.contains('open');
             if (isOpen) {
-                settingsPanel.classList.add('hidden');
+                settingsPanel.classList.remove('open');
                 settingsCog.classList.remove('active');
             } else {
-                settingsPanel.classList.remove('hidden');
+                settingsPanel.classList.add('open');
                 settingsCog.classList.add('active');
             }
         });
         // Close when clicking outside
         document.addEventListener('click', (e) => {
             if (!settingsPanel.contains(e.target) && e.target !== settingsCog) {
-                settingsPanel.classList.add('hidden');
+                settingsPanel.classList.remove('open');
                 settingsCog.classList.remove('active');
             }
         });
