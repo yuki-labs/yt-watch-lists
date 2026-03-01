@@ -140,6 +140,8 @@ body.neumorphic .settings-panel {
     border-radius: 15px;
     box-shadow: inset 4px 4px 8px #9baec8, inset -4px -4px 8px #ffffff;
     padding: 8px;
+    margin-left: 10px;
+    margin-right: 10px;
 }
 
 body.neumorphic .settings-item {
