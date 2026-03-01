@@ -94,8 +94,7 @@ function closeAllMenus() {
     const startPositions = new Map();
     videoItems.forEach(el => startPositions.set(el, el.getBoundingClientRect().top));
 
-    // --- EXISTING LOGIC START ---
-    // Always clean up UI states
+    // Close all open dropdown menus
     document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
         menu.classList.remove('show');
     });
@@ -103,123 +102,78 @@ function closeAllMenus() {
     const container = document.querySelector('.container');
     const scrollSpacer = document.getElementById('scroll-spacer');
     const header = document.querySelector('header');
+    const shiftSelector = '.header, .button-group, .search-container, #message, h2, #settings-panel, .video-item';
 
-    // Check if user is in neumorphic mode where shift applies
-    if (container && scrollSpacer && header && document.body.classList.contains('neumorphic')) {
-        const spacerHeight = scrollSpacer.offsetHeight;
-
-        // Get current shift amount from header dataset (stored during open)
-        let shiftAmount = 0;
-        if (header.dataset.shiftAmount) {
-            shiftAmount = parseFloat(header.dataset.shiftAmount);
-        } else {
-            // Fallback to regex
-            let transform = header.style.transform;
-            if (transform && transform !== 'none') {
-                const match = transform.match(/translateY\s*\(\s*-?(\d+(\.\d+)?)\s*px\s*\)/i);
-                if (match) {
-                    shiftAmount = parseFloat(match[1]);
-                }
-            }
-        }
-
-        console.log('Close Animation - Header Transform:', header.style.transform, 'Detected Shift (Dataset):', shiftAmount);
-
-        if (shiftAmount > 0) {
-            // Clear the dataset for next time
-            delete header.dataset.shiftAmount;
-
-            // Check if user is at the "Shifted Top" position
-            // i.e., scrolled as high as possible given the shift
-            const minScroll = spacerHeight - shiftAmount;
-            // Use a small tolerance check (e.g. 5px)
-            const isAtShiftedTop = container.scrollTop <= minScroll + 5;
-
-            if (isAtShiftedTop) {
-                // STATIC CLOSE (User is at top):
-                // Remove transform instantly and scroll DOWN to keep header visually in place.
-
-                // 1. Remove transforms instantly
-                const elementsToReset = document.querySelectorAll('.header, .button-group, .search-container, #message, h2, #settings-panel, .video-item');
-                elementsToReset.forEach(el => {
-                    el.classList.remove('shift-up');
-                    el.style.transition = 'none';
-                    el.style.transform = '';
-                });
-                // Reset video list container expansion
-                const videoList = document.getElementById('video-list');
-                if (videoList) {
-                    videoList.classList.remove('shift-up');
-                    videoList.style.transition = 'none';
-                    videoList.style.marginTop = '';
-                    videoList.style.paddingTop = '';
-                }
-
-                // 2. Adjust scroll
-                const originalBehavior = container.style.scrollBehavior;
-                container.style.scrollBehavior = 'auto';
-
-                container.scrollTop += shiftAmount;
-
-                container.style.scrollBehavior = originalBehavior;
-
-                // 3. Respect spacer minimum
-                if (container.scrollTop < spacerHeight) {
-                    container.scrollTop = spacerHeight;
-                }
-            } else {
-                // ANIMATED CLOSE (User is scrolled down):
-                // Allow the CSS transition to play (header slides UP/DOWN naturally)
-                const elementsToReset = document.querySelectorAll('.header.shift-up, .button-group.shift-up, .search-container.shift-up, #message.shift-up, h2.shift-up, #settings-panel.shift-up, .video-item.shift-up, .video-item');
-                elementsToReset.forEach(el => {
-                    el.classList.remove('shift-up');
-                    el.style.transition = 'transform 0.25s ease';
-                    el.style.transform = '';
-                    setTimeout(() => {
-                        if (!el.style.transform) el.style.transition = '';
-                    }, 300);
-                });
-                // Animate video list container back
-                const videoList = document.getElementById('video-list');
-                if (videoList) {
-                    videoList.classList.remove('shift-up');
-                    videoList.style.transition = 'margin-top 0.25s ease, padding-top 0.25s ease';
-                    videoList.style.marginTop = '';
-                    videoList.style.paddingTop = '';
-                    setTimeout(() => { videoList.style.transition = ''; }, 300);
-                }
-            }
-        } else {
-            // Fallback for neumorphic but no shift detected (clean up anyway)
-            const elementsToReset = document.querySelectorAll('.header.shift-up, .button-group.shift-up, .search-container.shift-up, #message.shift-up, h2.shift-up, #settings-panel.shift-up, .video-item.shift-up, .video-item');
-            elementsToReset.forEach(el => {
-                el.classList.remove('shift-up');
-                el.style.transform = '';
-                el.style.transition = '';
-            });
-            const videoList = document.getElementById('video-list');
-            if (videoList) {
-                videoList.classList.remove('shift-up');
-                videoList.style.marginTop = '';
-                videoList.style.paddingTop = '';
-                videoList.style.transition = '';
-            }
-        }
-    } else {
-        // Normal reset (non-neumorphic)
-        const elementsToReset = document.querySelectorAll('.header.shift-up, .button-group.shift-up, .search-container.shift-up, #message.shift-up, h2.shift-up, #settings-panel.shift-up, .video-item.shift-up, .video-item');
-        elementsToReset.forEach(el => {
+    // Helper: reset all shifted elements and video list container
+    function resetShiftedElements(animate) {
+        const els = document.querySelectorAll(shiftSelector);
+        els.forEach(el => {
             el.classList.remove('shift-up');
-            el.style.transform = '';
-            el.style.transition = '';
+            if (animate) {
+                el.style.transition = 'transform 0.25s ease';
+                el.style.transform = '';
+                setTimeout(() => { if (!el.style.transform) el.style.transition = ''; }, 300);
+            } else {
+                el.style.transition = animate === false ? 'none' : '';
+                el.style.transform = '';
+                if (animate === null) el.style.transition = '';
+            }
         });
         const videoList = document.getElementById('video-list');
         if (videoList) {
             videoList.classList.remove('shift-up');
+            if (animate) {
+                videoList.style.transition = 'margin-top 0.25s ease, padding-top 0.25s ease';
+                setTimeout(() => { videoList.style.transition = ''; }, 300);
+            } else {
+                videoList.style.transition = animate === false ? 'none' : '';
+            }
             videoList.style.marginTop = '';
             videoList.style.paddingTop = '';
-            videoList.style.transition = '';
         }
+    }
+
+    if (container && scrollSpacer && header && document.body.classList.contains('neumorphic')) {
+        const spacerHeight = scrollSpacer.offsetHeight;
+
+        // Get current shift amount from header dataset (stored during open)
+        let shiftAmount = header.dataset.shiftAmount ? parseFloat(header.dataset.shiftAmount) : 0;
+        if (!shiftAmount) {
+            const transform = header.style.transform;
+            if (transform && transform !== 'none') {
+                const match = transform.match(/translateY\s*\(\s*-?(\d+(\.\d+)?)\s*px\s*\)/i);
+                if (match) shiftAmount = parseFloat(match[1]);
+            }
+        }
+
+        if (shiftAmount > 0) {
+            delete header.dataset.shiftAmount;
+            const minScroll = spacerHeight - shiftAmount;
+            const isAtShiftedTop = container.scrollTop <= minScroll + 5;
+
+            if (isAtShiftedTop) {
+                // STATIC CLOSE: Remove transforms instantly, adjust scroll
+                resetShiftedElements(false);
+
+                const originalBehavior = container.style.scrollBehavior;
+                container.style.scrollBehavior = 'auto';
+                container.scrollTop += shiftAmount;
+                container.style.scrollBehavior = originalBehavior;
+
+                if (container.scrollTop < spacerHeight) {
+                    container.scrollTop = spacerHeight;
+                }
+            } else {
+                // ANIMATED CLOSE: Transition elements back
+                resetShiftedElements(true);
+            }
+        } else {
+            // No shift detected, clean up anyway
+            resetShiftedElements(null);
+        }
+    } else {
+        // Non-neumorphic reset
+        resetShiftedElements(null);
     }
 
     // Remove scroll handler if it exists
@@ -228,13 +182,12 @@ function closeAllMenus() {
         container._shiftScrollHandler = null;
     }
 
-    // Scroll back past the spacer after animation (delayed)
+    // Scroll back past the spacer after animation
     if (container && scrollSpacer && document.body.classList.contains('neumorphic')) {
         setTimeout(() => {
             container.scrollTop = scrollSpacer.offsetHeight;
         }, 300);
     }
-    // --- EXISTING LOGIC END ---
 
     // FLIP Animation: Play
     // Force layout update to get new positions
@@ -454,25 +407,21 @@ function createVideoItem(video, removeCallback, moveCallback, editCallback, move
 
             dropdown.classList.add('show');
             if (document.body.classList.contains('neumorphic')) {
-                const desiredGap = 10; // Equal gap above and below (matches margin-bottom in CSS)
-                console.log('Neumorphic mode - calculating shift');
+                const desiredGap = 10;
 
                 // Wait for dropdown to render so we can measure positions
                 requestAnimationFrame(() => {
                     const dropdownRect = dropdown.getBoundingClientRect();
-                    console.log('Dropdown rect:', dropdownRect);
 
                     const prevSibling = li.previousElementSibling;
                     const isTopItem = !prevSibling || !prevSibling.classList.contains('video-item');
                     const staticElements = document.querySelectorAll('header, .button-group, .search-container, #message, h2, #settings-panel');
-                    console.log('Is top item:', isTopItem, 'Static elements found:', staticElements.length);
 
                     if (isTopItem) {
                         // TOP ITEM: Measure gap to the element immediately above video list
                         // Order from bottom to top: search-container, button-group, header
                         const searchContainer = document.querySelector('.search-container');
                         const closestAbove = searchContainer || document.querySelector('.button-group') || document.querySelector('header');
-                        console.log('Closest above element:', closestAbove);
 
                         if (closestAbove) {
                             const aboveRect = closestAbove.getBoundingClientRect();
@@ -481,7 +430,6 @@ function createVideoItem(video, removeCallback, moveCallback, editCallback, move
                             // Shift UP increases the gap, so: newGap = currentGap + shift
                             // We want: newGap = desiredGap, so: shift = desiredGap - currentGap
                             const exactShift = desiredGap - currentGapAbove;
-                            console.log('Current gap:', currentGapAbove, 'Exact shift needed:', exactShift);
 
                             if (exactShift > 0) {
                                 // Calculate how much to expand the video list container
@@ -512,9 +460,6 @@ function createVideoItem(video, removeCallback, moveCallback, editCallback, move
                                     videoList.style.marginTop = `-${listExpansion}px`;
                                     videoList.style.paddingTop = `${16 + listExpansion}px`;
                                 }
-                                console.log('Applied shift:', listExpansion, 'gapBelow:', gapBelow, 'currentGapAbove:', currentGapAbove);
-                            } else {
-                                console.log('No shift needed (exactShift <= 0)');
                             }
                         }
                     } else {

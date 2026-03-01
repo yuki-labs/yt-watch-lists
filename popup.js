@@ -130,17 +130,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.body.classList.add('dark');
     }
     if (darkToggle) {
-        const darkIcon = darkToggle.querySelector('.settings-icon');
-        const updateDarkState = () => {
-            const isDark = document.body.classList.contains('dark');
-            if (darkIcon) darkIcon.textContent = isDark ? '🌗' : '🌗';
-        };
-        updateDarkState();
         darkToggle.addEventListener('click', () => {
             document.body.classList.toggle('dark');
             const isDark = document.body.classList.contains('dark');
             localStorage.setItem('colorScheme', isDark ? 'dark' : 'light');
-            updateDarkState();
         });
     }
 

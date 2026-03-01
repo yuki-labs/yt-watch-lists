@@ -18,22 +18,17 @@
 
 .settings-panel {
     background-color: #f8f8f8;
-    border: none;
-    border-top: 1px solid #eee;
-    border-bottom: 1px solid #eee;
+    border-top: 1px solid transparent;
+    border-bottom: 1px solid transparent;
     border-radius: 10px;
-    padding: 10px;
-    margin-bottom: 12px;
     display: flex;
     flex-direction: column;
     gap: 10px;
     max-height: 0;
     opacity: 0;
     overflow: hidden;
-    padding-top: 0;
-    padding-bottom: 0;
+    padding: 0 10px;
     margin-bottom: 0;
-    border-color: transparent;
     transition: max-height 0.25s ease, opacity 0.2s ease, padding 0.25s ease, margin 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
@@ -43,20 +38,6 @@
     padding: 10px;
     margin-bottom: 12px;
     border-color: #eee;
-    border-top-color: #eee;
-    border-bottom-color: #eee;
-}
-
-@keyframes settingsSlideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-8px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
 .settings-item {
@@ -178,6 +159,9 @@ body.dark.neumorphic .settings-cog:hover {
 body.dark.neumorphic .settings-panel {
     background-color: #2a2d32;
     border-radius: 15px;
+}
+
+body.dark.neumorphic .settings-panel.open {
     box-shadow: inset 0 4px 8px #1e2024, inset 0 -4px 8px #363a40;
 }
 
