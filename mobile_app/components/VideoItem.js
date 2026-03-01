@@ -1,101 +1,182 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Linking } from 'react-native';
+import { View, Image, TouchableOpacity, StyleSheet, Linking } from 'react-native';
+import { Surface, Text, IconButton } from 'react-native-paper';
+import { getColors, getNeuColors } from '../theme/m3Theme';
 
-export default function VideoItem({ item, onMenu, theme }) {
+export default function VideoItem({ item, onMenu, theme, colorScheme, dragHandlers, isActive }) {
     const isNeumorphic = theme === 'neumorphic';
+    const colors = getColors(colorScheme);
+    const nc = getNeuColors(colorScheme);
 
-    return (
-        <TouchableOpacity
-            style={[styles.item, isNeumorphic && styles.neuItem]}
-            onPress={() => Linking.openURL(item.url)}
-            onLongPress={() => onMenu(item)} // Keep long press as alternative
-        >
-            <Image
-                source={{ uri: item.thumbnail }}
-                style={[styles.thumbnail, isNeumorphic && styles.neuThumbnail]}
-                resizeMode="cover"
-            />
-            <View style={styles.info}>
-                <Text style={[styles.title, isNeumorphic && styles.neuText]} numberOfLines={2}>{item.title}</Text>
-                <Text style={styles.url} numberOfLines={1}>{item.url}</Text>
+    // ─── Neumorphic layout ───
+    if (isNeumorphic) {
+        const neuCardShadow = [
+            { offsetX: 9, offsetY: 9, blurRadius: 16, spreadDistance: 0, color: `${nc.shadowDark}0.6)` },
+            { offsetX: -9, offsetY: -9, blurRadius: 16, spreadDistance: 0, color: `${nc.shadowLight}0.8)` },
+        ];
+        const neuThumbShadow = [
+            { offsetX: 3, offsetY: 3, blurRadius: 6, spreadDistance: 0, color: `${nc.shadowDark}0.5)`, inset: true },
+            { offsetX: -3, offsetY: -3, blurRadius: 6, spreadDistance: 0, color: `${nc.shadowLight}0.6)`, inset: true },
+        ];
+        const neuMenuBtnShadow = [
+            { offsetX: 4, offsetY: 4, blurRadius: 8, spreadDistance: 0, color: `${nc.shadowDark}0.5)` },
+            { offsetX: -4, offsetY: -4, blurRadius: 8, spreadDistance: 0, color: `${nc.shadowLight}0.7)` },
+        ];
+
+        return (
+            <View style={[styles.neuCard, { backgroundColor: nc.base, boxShadow: neuCardShadow }]}>
+                <TouchableOpacity
+                    style={styles.neuCardInner}
+                    onPress={() => Linking.openURL(item.url)}
+                    activeOpacity={0.85}
+                >
+                    <View style={[styles.neuThumbnailWrapper, { boxShadow: neuThumbShadow }]}>
+                        <Image
+                            source={{ uri: item.thumbnail }}
+                            style={styles.neuThumbnail}
+                            resizeMode="cover"
+                        />
+                    </View>
+                    <View style={styles.neuInfo}>
+                        <Text style={[styles.neuTitle, { color: nc.text }]} numberOfLines={2}>{item.title}</Text>
+                        <Text style={[styles.neuUrl, { color: nc.textSecondary }]} numberOfLines={1}>{item.url}</Text>
+                    </View>
+                </TouchableOpacity>
+                <View
+                    style={[styles.neuMenuBtn, { backgroundColor: nc.base, boxShadow: neuMenuBtnShadow }]}
+                    {...(dragHandlers || {})}
+                >
+                    <Text style={[styles.neuMenuIcon, { color: nc.text }]}>⋮</Text>
+                </View>
             </View>
+        );
+    }
+
+    // ─── M3 Expressive layout ───
+    return (
+        <Surface style={[styles.m3Card, { backgroundColor: colors.surfaceContainerLow }]} elevation={1}>
             <TouchableOpacity
-                style={[styles.menuBtn, isNeumorphic && styles.neuMenuBtn]}
-                onPress={() => onMenu(item)}
+                style={styles.m3CardInner}
+                onPress={() => Linking.openURL(item.url)}
+                activeOpacity={0.8}
             >
-                <Text style={[styles.menuText, isNeumorphic && styles.neuText]}>⋮</Text>
+                <Image
+                    source={{ uri: item.thumbnail }}
+                    style={styles.m3Thumbnail}
+                    resizeMode="cover"
+                />
+                <View style={styles.m3Info}>
+                    <Text
+                        variant="titleSmall"
+                        style={[styles.m3Title, { color: colors.onSurface }]}
+                        numberOfLines={2}
+                    >
+                        {item.title}
+                    </Text>
+                    <Text
+                        variant="bodySmall"
+                        style={[styles.m3Url, { color: colors.onSurfaceVariant }]}
+                        numberOfLines={1}
+                    >
+                        {item.url}
+                    </Text>
+                </View>
+                <View {...(dragHandlers || {})} style={styles.m3MenuBtn}>
+                    <Text style={[styles.m3MenuIcon, { color: colors.onSurfaceVariant }]}>⋮</Text>
+                </View>
             </TouchableOpacity>
-        </TouchableOpacity>
+        </Surface>
     );
 }
 
 const styles = StyleSheet.create({
-    item: {
-        flexDirection: 'row',
-        backgroundColor: '#fff',
-        marginBottom: 10,
-        borderRadius: 8,
+    // ── M3 Expressive ──
+    m3Card: {
+        borderRadius: 20,
+        marginBottom: 12,
         overflow: 'hidden',
-        elevation: 2,
     },
-    thumbnail: {
-        width: 160,
-        height: 90,
+    m3CardInner: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
-    info: {
+    m3Thumbnail: {
+        width: 140,
+        height: 80,
+        borderTopLeftRadius: 20,
+        borderBottomLeftRadius: 20,
+    },
+    m3Info: {
         flex: 1,
-        padding: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
         justifyContent: 'center',
     },
-    title: {
-        fontSize: 16,
+    m3Title: {
         fontWeight: '600',
         marginBottom: 4,
     },
-    url: {
-        fontSize: 12,
-        color: '#888',
-    },
-    menuBtn: {
-        padding: 10,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    menuText: {
-        fontSize: 24,
-        color: '#666',
-        fontWeight: 'bold',
-    },
-    neuItem: {
-        backgroundColor: '#e0e5ec',
-        borderRadius: 15,
-        borderWidth: 0,
-        elevation: 0, // Reset default elevation
-        shadowColor: "#a3b1c6",
-        shadowOffset: { width: 9, height: 9 },
-        shadowOpacity: 0.6,
-        shadowRadius: 16,
-        // We can't easily do two shadows in React Native, so we prioritize the dark one for depth
-        // Or wrap in another view to fake it, but simple shadow is often enough for "soft" look on mobile
-        marginBottom: 20,
-    },
-    neuThumbnail: {
-        borderRadius: 10,
-    },
-    neuText: {
-        color: '#4a4a4a',
-    },
-    neuMenuBtn: {
-        backgroundColor: '#e0e5ec',
-        borderRadius: 20,
-        margin: 5,
+    m3Url: {},
+    m3MenuBtn: {
+        margin: 0,
         width: 40,
         height: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    m3MenuIcon: {
+        fontSize: 20,
+        fontWeight: 'bold',
+    },
+
+    // ── Neumorphic ──
+    neuCard: {
+        borderRadius: 15,
+        marginBottom: 24,
+        padding: 14,
+        overflow: 'visible',
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    neuCardInner: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    neuThumbnailWrapper: {
+        borderRadius: 10,
+        overflow: 'hidden',
+    },
+    neuThumbnail: {
+        width: 140,
+        height: 80,
+        borderRadius: 10,
+    },
+    neuInfo: {
+        flex: 1,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        justifyContent: 'center',
+    },
+    neuTitle: {
+        fontSize: 15,
+        fontWeight: '600',
+        lineHeight: 20,
+        marginBottom: 4,
+    },
+    neuUrl: {
+        fontSize: 11,
+        lineHeight: 15,
+    },
+    neuMenuBtn: {
+        borderRadius: 20,
+        width: 38,
+        height: 38,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: "#a3b1c6",
-        shadowOffset: { width: 3, height: 3 },
-        shadowOpacity: 0.5,
-        shadowRadius: 5,
-    }
+    },
+    neuMenuIcon: {
+        fontSize: 18,
+        fontWeight: '700',
+    },
 });

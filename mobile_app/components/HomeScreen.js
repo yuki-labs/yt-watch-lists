@@ -1,19 +1,67 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     View,
-    Text,
-    FlatList,
     StyleSheet,
-    TouchableOpacity,
     RefreshControl,
     Alert,
-    TextInput,
+    Animated,
+    Keyboard,
+    Pressable,
 } from 'react-native';
+import {
+    Appbar,
+    Searchbar,
+    FAB,
+    Banner,
+    Text,
+    IconButton,
+    Icon,
+} from 'react-native-paper';
+import DraggableList from './DraggableList';
 import { fetchVideos, syncVideos, checkStatus, addVideo, deleteVideo, getLocalVideos, getLocalTimestamp } from '../api';
 import VideoItem from './VideoItem';
 import MenuModal from './MenuModal';
 import EditTitleModal from './EditTitleModal';
 import AddVideoModal from './AddVideoModal';
+import { getColors, getNeuColors, getNeuShadows } from '../theme/m3Theme';
+
+// ── CrossFadeIcon: fades between icons when the name changes ──
+function CrossFadeIcon({ name, size, color }) {
+    const [currentIcon, setCurrentIcon] = useState(name);
+    const [prevIcon, setPrevIcon] = useState(name);
+    const fadeAnim = useRef(new Animated.Value(1)).current;
+
+    useEffect(() => {
+        if (name !== currentIcon) {
+            setPrevIcon(currentIcon);
+            fadeAnim.setValue(0);
+            setCurrentIcon(name);
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 200,
+                useNativeDriver: true,
+            }).start();
+        }
+    }, [name]);
+
+    const fadeOut = fadeAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [1, 0],
+    });
+
+    return (
+        <View style={{ width: size, height: size }}>
+            {prevIcon !== currentIcon && (
+                <Animated.View style={{ position: 'absolute', opacity: fadeOut }}>
+                    <Icon source={prevIcon} size={size} color={color} />
+                </Animated.View>
+            )}
+            <Animated.View style={{ opacity: fadeAnim }}>
+                <Icon source={currentIcon} size={size} color={color} />
+            </Animated.View>
+        </View>
+    );
+}
 
 // Helper to extract video ID from YouTube URLs
 function extractVideoId(url) {
@@ -28,7 +76,7 @@ function extractVideoId(url) {
     return null;
 }
 
-export default function HomeScreen({ onSettings, theme }) {
+export default function HomeScreen({ onSettings, theme, colorScheme, onToggleColorScheme }) {
     const [videos, setVideos] = useState([]);
     const [refreshing, setRefreshing] = useState(false);
     const [isOffline, setIsOffline] = useState(false);
@@ -40,12 +88,14 @@ export default function HomeScreen({ onSettings, theme }) {
     const [editTitleVisible, setEditTitleVisible] = useState(false);
     const [addModalVisible, setAddModalVisible] = useState(false);
 
-    // Progressive loading
-    const PAGE_SIZE = 20;
-    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-
     // Polling ref
     const pollIntervalRef = useRef(null);
+
+    // Dynamic colors
+    const colors = getColors(colorScheme);
+    const nc = getNeuColors(colorScheme);
+    const neuShadows = getNeuShadows(colorScheme);
+    const isDark = colorScheme === 'dark';
 
     // Initial load
     useEffect(() => {
@@ -59,7 +109,6 @@ export default function HomeScreen({ onSettings, theme }) {
             const status = await checkStatus();
             if (status) {
                 setIsOffline(false);
-                // Also sync videos when online
                 try {
                     const vids = await fetchVideos();
                     setVideos(vids);
@@ -80,13 +129,11 @@ export default function HomeScreen({ onSettings, theme }) {
 
     const loadVideos = async () => {
         try {
-            // FAST: Load local data first for instant display
             const localVids = await getLocalVideos();
             if (localVids.length > 0) {
                 setVideos(localVids);
             }
 
-            // BACKGROUND: Fetch from server (may update the list)
             const status = await checkStatus();
             setIsOffline(!status);
 
@@ -97,7 +144,6 @@ export default function HomeScreen({ onSettings, theme }) {
         } catch (e) {
             console.log('Load error:', e);
             setIsOffline(true);
-            // Still try to show local data on error
             const localVids = await getLocalVideos();
             if (localVids.length > 0) {
                 setVideos(localVids);
@@ -117,21 +163,14 @@ export default function HomeScreen({ onSettings, theme }) {
         v.id.includes(searchQuery)
     );
 
-    // Progressive loading - only show visibleCount items
-    const displayedVideos = filteredVideos.slice(0, visibleCount);
-    const hasMore = visibleCount < filteredVideos.length;
+    // Whether we're searching (disable drag during search since order wouldn't map correctly)
+    const isSearching = searchQuery.length > 0;
 
-    // Load more when reaching end of list
-    const loadMore = useCallback(() => {
-        if (hasMore) {
-            setVisibleCount(prev => prev + PAGE_SIZE);
-        }
-    }, [hasMore]);
-
-    // Reset visible count when search or videos change
-    useEffect(() => {
-        setVisibleCount(PAGE_SIZE);
-    }, [searchQuery, videos.length]);
+    // Handler for drag-to-reorder completion
+    const handleDragEnd = useCallback(async ({ data }) => {
+        if (isSearching) return; // Don't reorder during search
+        await syncAndUpdate(data);
+    }, [isSearching, videos]);
 
     // Handler for adding a video
     const handleAddVideo = async (url) => {
@@ -141,14 +180,12 @@ export default function HomeScreen({ onSettings, theme }) {
             return;
         }
 
-        // Check if already exists
         if (videos.some(v => v.id === videoId)) {
             Alert.alert('Already Added', 'This video is already in your list');
             return;
         }
 
         try {
-            // Fetch video info
             const response = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
             const data = await response.json();
 
@@ -221,39 +258,207 @@ export default function HomeScreen({ onSettings, theme }) {
     };
 
     const isNeumorphic = theme === 'neumorphic';
+    const darkModeIcon = isDark ? 'weather-sunny' : 'weather-night';
 
-    return (
-        <View style={[styles.container, isNeumorphic && styles.neuContainer]}>
-            <View style={[styles.header, isNeumorphic && styles.neuHeader]}>
-                <Text style={[styles.headerTitle, isNeumorphic && styles.neuText]}>Watch Later {isOffline ? '(Offline)' : ''}</Text>
-                <TouchableOpacity onPress={onSettings}>
-                    <Text style={styles.settingsBtn}>⚙️</Text>
+    // ─── Neumorphic layout ───
+    if (isNeumorphic) {
+        const { TouchableOpacity, TextInput } = require('react-native');
+        const settingsBtnShadow = [
+            { offsetX: 4, offsetY: 4, blurRadius: 8, spreadDistance: 0, color: `${nc.shadowDark}0.5)` },
+            { offsetX: -4, offsetY: -4, blurRadius: 8, spreadDistance: 0, color: `${nc.shadowLight}0.7)` },
+        ];
+        const searchInsetShadow = [
+            { offsetX: 6, offsetY: 6, blurRadius: 10, spreadDistance: 0, color: `${nc.shadowDark}0.5)`, inset: true },
+            { offsetX: -6, offsetY: -6, blurRadius: 10, spreadDistance: 0, color: `${nc.shadowLight}0.7)`, inset: true },
+        ];
+        const listContainerShadow = [
+            { offsetX: 0, offsetY: 6, blurRadius: 12, spreadDistance: 0, color: `${nc.shadowDark}0.55)`, inset: true },
+            { offsetX: 0, offsetY: -6, blurRadius: 12, spreadDistance: 0, color: `${nc.shadowLight}0.7)`, inset: true },
+        ];
+        const offlineBannerShadow = [
+            { offsetX: 3, offsetY: 3, blurRadius: 6, spreadDistance: 0, color: `${nc.shadowDark}0.5)`, inset: true },
+            { offsetX: -3, offsetY: -3, blurRadius: 6, spreadDistance: 0, color: `${nc.shadowLight}0.6)`, inset: true },
+        ];
+
+        return (
+            <View style={[styles.container, { backgroundColor: nc.base }]}>
+                <View style={[styles.neuHeader, { backgroundColor: nc.base }]}>
+                    <View style={[styles.neuSearchWrapper, {
+                        backgroundColor: nc.searchBg,
+                        boxShadow: searchInsetShadow,
+                    }]}>
+                        <TextInput
+                            style={[styles.neuSearchInput, { color: nc.text }]}
+                            placeholder="Search videos..."
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                            clearButtonMode="while-editing"
+                            placeholderTextColor={nc.placeholderText}
+                        />
+                    </View>
+                </View>
+                <Pressable onPress={Keyboard.dismiss} style={[styles.neuTitleRow, { backgroundColor: nc.base }]}>
+                    <Text style={[styles.neuTitleText, { color: nc.text }]}>
+                        Watch Later {isOffline ? '(Offline)' : ''}
+                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <IconButton
+                            icon={() => <CrossFadeIcon name={darkModeIcon} size={22} color={nc.text} />}
+                            onPress={onToggleColorScheme}
+                            containerColor={nc.base}
+                            rippleColor="transparent"
+                            size={22}
+                            style={[styles.neuSettingsBtn, {
+                                boxShadow: settingsBtnShadow,
+                            }]}
+                        />
+                        <IconButton
+                            icon="cog"
+                            onPress={onSettings}
+                            iconColor={nc.text}
+                            containerColor={nc.base}
+                            size={22}
+                            style={[styles.neuSettingsBtn, {
+                                boxShadow: settingsBtnShadow,
+                            }]}
+                        />
+                    </View>
+                </Pressable>
+
+                {isOffline && (
+                    <View style={[styles.neuOfflineBanner, {
+                        backgroundColor: nc.base,
+                        boxShadow: offlineBannerShadow,
+                    }]}>
+                        <Text style={[styles.neuOfflineText, { color: nc.warning }]}>
+                            No connection. Changes saved locally.
+                        </Text>
+                    </View>
+                )}
+
+                <View style={[styles.neuListContainer, {
+                    backgroundColor: nc.surface,
+                    boxShadow: listContainerShadow,
+                }]}>
+                    <DraggableList
+                        data={isSearching ? filteredVideos : videos}
+                        renderItem={({ item, dragHandlers, isActive }) => (
+                            <VideoItem
+                                item={item}
+                                theme={theme}
+                                colorScheme={colorScheme}
+                                isActive={isActive}
+                                dragHandlers={isSearching ? undefined : dragHandlers}
+                                onMenu={(v) => {
+                                    setSelectedVideo(v);
+                                    setMenuVisible(true);
+                                }}
+                            />
+                        )}
+                        keyExtractor={item => item.id}
+                        onDragEnd={handleDragEnd}
+                        onItemTap={(index) => {
+                            const v = isSearching ? filteredVideos[index] : videos[index];
+                            if (v) { setSelectedVideo(v); setMenuVisible(true); }
+                        }}
+                        refreshControl={
+                            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                        }
+                        contentContainerStyle={styles.neuListContent}
+                    />
+                </View>
+
+                <TouchableOpacity
+                    style={[styles.neuFab, {
+                        backgroundColor: nc.base,
+                        boxShadow: neuShadows.fabShadow,
+                    }]}
+                    onPress={() => setAddModalVisible(true)}
+                >
+                    <Text style={[styles.neuFabText, { color: nc.text }]}>+</Text>
                 </TouchableOpacity>
-            </View>
+
+                <AddVideoModal
+                    visible={addModalVisible}
+                    onClose={() => setAddModalVisible(false)}
+                    onAdd={handleAddVideo}
+                    theme={theme}
+                    colorScheme={colorScheme}
+                />
+                <MenuModal
+                    visible={menuVisible}
+                    video={selectedVideo}
+                    onClose={() => setMenuVisible(false)}
+                    onOption={handleMenuOption}
+                    theme={theme}
+                    colorScheme={colorScheme}
+                />
+                <EditTitleModal
+                    visible={editTitleVisible}
+                    video={selectedVideo}
+                    onClose={() => setEditTitleVisible(false)}
+                    onSave={handleEditTitle}
+                    theme={theme}
+                    colorScheme={colorScheme}
+                />
+            </View >
+        );
+    }
+
+    // ─── M3 Expressive layout ───
+    return (
+        <View style={[styles.m3Container, { backgroundColor: colors.surface }]}>
+            <Pressable onPress={Keyboard.dismiss}>
+                <Appbar.Header
+                    style={[styles.m3Appbar, { backgroundColor: colors.surfaceContainerLow }]}
+                    elevated
+                >
+                    <Appbar.Content
+                        title="Watch Later"
+                        subtitle={isOffline ? 'Offline' : undefined}
+                        titleStyle={[styles.m3AppbarTitle, { color: colors.onSurface }]}
+                    />
+                    <Appbar.Action
+                        icon={darkModeIcon}
+                        onPress={onToggleColorScheme}
+                        iconColor={colors.onSurface}
+                    />
+                    <Appbar.Action icon="cog" onPress={onSettings} iconColor={colors.onSurface} />
+                </Appbar.Header>
+            </Pressable>
 
             {isOffline && (
-                <View style={styles.offlineBanner}>
-                    <Text style={styles.offlineText}>No connection. Changes saved locally.</Text>
-                </View>
+                <Banner
+                    visible={true}
+                    icon="wifi-off"
+                    style={[styles.m3Banner, { backgroundColor: colors.tertiaryContainer }]}
+                >
+                    No connection — changes saved locally.
+                </Banner>
             )}
 
-            <View style={[styles.searchContainer, isNeumorphic && styles.neuHeader]}>
-                <TextInput
-                    style={[styles.searchInput, isNeumorphic && styles.neuInput]}
+            <View style={[styles.m3SearchContainer, { backgroundColor: colors.surface }]}>
+                <Searchbar
                     placeholder="Search videos..."
-                    value={searchQuery}
                     onChangeText={setSearchQuery}
-                    clearButtonMode="while-editing"
-                    placeholderTextColor={isNeumorphic ? '#999' : '#ccc'}
+                    value={searchQuery}
+                    style={[styles.m3Searchbar, { backgroundColor: colors.surfaceContainerHigh }]}
+                    inputStyle={[styles.m3SearchInput, { color: colors.onSurface }]}
+                    iconColor={colors.onSurfaceVariant}
+                    placeholderTextColor={colors.onSurfaceVariant}
+                    elevation={0}
                 />
             </View>
 
-            <FlatList
-                data={displayedVideos}
-                renderItem={({ item }) => (
+            <DraggableList
+                data={isSearching ? filteredVideos : videos}
+                renderItem={({ item, dragHandlers, isActive }) => (
                     <VideoItem
                         item={item}
                         theme={theme}
+                        colorScheme={colorScheme}
+                        isActive={isActive}
+                        dragHandlers={isSearching ? undefined : dragHandlers}
                         onMenu={(v) => {
                             setSelectedVideo(v);
                             setMenuVisible(true);
@@ -261,126 +466,165 @@ export default function HomeScreen({ onSettings, theme }) {
                     />
                 )}
                 keyExtractor={item => item.id}
+                onDragEnd={handleDragEnd}
+                onItemTap={(index) => {
+                    const v = isSearching ? filteredVideos[index] : videos[index];
+                    if (v) { setSelectedVideo(v); setMenuVisible(true); }
+                }}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={[colors.primary]}
+                        progressBackgroundColor={colors.surfaceContainerHigh}
+                    />
                 }
                 contentContainerStyle={styles.list}
-                onEndReached={loadMore}
-                onEndReachedThreshold={0.5}
             />
 
-            <TouchableOpacity
-                style={styles.fab}
+            <FAB
+                icon="plus"
+                style={[styles.m3Fab, { backgroundColor: colors.primaryContainer }]}
+                color={colors.onPrimaryContainer}
                 onPress={() => setAddModalVisible(true)}
-            >
-                <Text style={styles.fabText}>+</Text>
-            </TouchableOpacity>
+            />
 
             <AddVideoModal
                 visible={addModalVisible}
                 onClose={() => setAddModalVisible(false)}
                 onAdd={handleAddVideo}
+                theme={theme}
+                colorScheme={colorScheme}
             />
-
             <MenuModal
                 visible={menuVisible}
                 video={selectedVideo}
                 onClose={() => setMenuVisible(false)}
                 onOption={handleMenuOption}
+                theme={theme}
+                colorScheme={colorScheme}
             />
-
             <EditTitleModal
                 visible={editTitleVisible}
                 video={selectedVideo}
                 onClose={() => setEditTitleVisible(false)}
                 onSave={handleEditTitle}
+                theme={theme}
+                colorScheme={colorScheme}
             />
         </View>
     );
 }
 
 const styles = StyleSheet.create({
+    // ── M3 Expressive ──
+    m3Container: {
+        flex: 1,
+    },
+    m3Appbar: {},
+    m3AppbarTitle: {
+        fontWeight: '700',
+        fontSize: 22,
+    },
+    m3Banner: {},
+    m3SearchContainer: {
+        paddingHorizontal: 16,
+        paddingTop: 6,
+        paddingBottom: 2,
+    },
+    m3Searchbar: {
+        borderRadius: 28,
+        elevation: 0,
+    },
+    m3SearchInput: {
+        fontSize: 16,
+    },
+    m3Fab: {
+        position: 'absolute',
+        right: 16,
+        bottom: 24,
+        borderRadius: 28,
+    },
+    list: {
+        paddingHorizontal: 12,
+        paddingTop: 4,
+        paddingBottom: 88,
+    },
+
+    // ── Neumorphic ──
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
     },
-    header: {
-        padding: 15,
+    neuHeader: {
+        paddingHorizontal: 15,
         paddingTop: 50,
-        backgroundColor: '#fff',
+        paddingBottom: 10,
+    },
+    neuTitleRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+        paddingHorizontal: 15,
+        paddingBottom: 10,
     },
-    headerTitle: {
+    neuTitleText: {
         fontSize: 20,
         fontWeight: 'bold',
     },
-    settingsBtn: {
-        fontSize: 24,
-    },
-    offlineBanner: {
-        backgroundColor: '#ffcc00',
-        padding: 8,
+    neuSettingsBtn: {
+        borderRadius: 22,
+        width: 44,
+        height: 44,
         alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'visible',
     },
-    offlineText: {
-        color: '#333',
-        fontWeight: 'bold',
-        fontSize: 12,
+    neuListContainer: {
+        flex: 1,
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        borderBottomLeftRadius: 0,
+        borderBottomRightRadius: 0,
+        overflow: 'hidden',
     },
-    searchContainer: {
-        padding: 10,
-        backgroundColor: '#fff',
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+    neuListContent: {
+        paddingHorizontal: 16,
+        paddingTop: 24,
+        paddingBottom: 88,
     },
-    searchInput: {
-        backgroundColor: '#f0f0f0',
-        padding: 10,
-        borderRadius: 8,
+    neuSearchWrapper: {
+        borderRadius: 50,
+        overflow: 'hidden',
+    },
+    neuSearchInput: {
+        paddingVertical: 12,
+        paddingHorizontal: 20,
         fontSize: 16,
     },
-    list: {
+    neuOfflineBanner: {
         padding: 10,
+        alignItems: 'center',
+        marginHorizontal: 15,
+        marginBottom: 8,
+        borderRadius: 12,
     },
-    fab: {
+    neuOfflineText: {
+        fontWeight: '700',
+        fontSize: 12,
+    },
+    neuFab: {
         position: 'absolute',
         right: 20,
         bottom: 30,
-        backgroundColor: '#007bff',
         width: 56,
         height: 56,
         borderRadius: 28,
         justifyContent: 'center',
         alignItems: 'center',
-        elevation: 5,
     },
-    fabText: {
-        color: '#fff',
+    neuFabText: {
         fontSize: 30,
-        marginTop: -4,
+        fontWeight: '600',
+        marginTop: -2,
     },
-    neuContainer: {
-        backgroundColor: '#e0e5ec',
-    },
-    neuHeader: {
-        backgroundColor: '#e0e5ec',
-        borderBottomColor: 'rgba(163,177,198, 0.2)',
-    },
-    neuText: {
-        color: '#4a4a4a',
-    },
-    neuInput: {
-        backgroundColor: '#e0e5ec',
-        borderRadius: 50,
-        paddingHorizontal: 20,
-        shadowColor: "#a3b1c6",
-        shadowOffset: { width: 4, height: 4 },
-        shadowOpacity: 0.4,
-        shadowRadius: 5,
-        elevation: 2,
-    }
 });

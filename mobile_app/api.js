@@ -99,12 +99,99 @@ const filterTombstoned = (videos, tombstones) => {
     });
 };
 
+// ── Timeout helper ──
+const timeout = (promise, ms) => {
+    return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => {
+            reject(new Error('TIMEOUT'));
+        }, ms);
+
+        promise
+            .then(value => {
+                clearTimeout(timer);
+                resolve(value);
+            })
+            .catch(reason => {
+                clearTimeout(timer);
+                reject(reason);
+            });
+    });
+};
+
+// ── Get this device's IP address ──
+export const getDeviceIp = async () => {
+    try {
+        const ip = await Network.getIpAddressAsync();
+        return ip;
+    } catch (e) {
+        console.error('Failed to get device IP', e);
+        return null;
+    }
+};
+
+// ── Test connection to a specific IP with detailed diagnostics ──
+export const testConnection = async (ip) => {
+    if (!ip || !ip.trim()) {
+        return { success: false, error: 'no_ip', message: 'No IP address provided' };
+    }
+
+    const targetIp = ip.trim();
+    const url = `http://${targetIp}/status`;
+
+    try {
+        const response = await timeout(fetch(url), 5000);
+        if (!response.ok) {
+            return {
+                success: false,
+                error: 'http_error',
+                message: `Server responded with HTTP ${response.status}`,
+                httpStatus: response.status,
+            };
+        }
+        const data = await response.json();
+        if (data && data.status === 'running') {
+            return {
+                success: true,
+                error: null,
+                message: 'Connected successfully!',
+                data,
+            };
+        }
+        return {
+            success: false,
+            error: 'wrong_response',
+            message: `Server responded but doesn't look like Watch Later (got: ${JSON.stringify(data)})`,
+        };
+    } catch (e) {
+        const errMsg = e.message || String(e);
+        if (errMsg === 'TIMEOUT') {
+            return {
+                success: false,
+                error: 'timeout',
+                message: `Connection timed out. Check:\n• Desktop app is running\n• IP "${targetIp}" is correct\n• Both devices on same network\n• Firewall allows port ${targetIp.includes(':') ? targetIp.split(':')[1] : '5000'}`,
+            };
+        }
+        if (errMsg.includes('Network request failed') || errMsg.includes('Failed to connect')) {
+            return {
+                success: false,
+                error: 'network_error',
+                message: `Network error: couldn't reach ${targetIp}.\nCheck firewall & network settings.`,
+            };
+        }
+        return {
+            success: false,
+            error: 'unknown',
+            message: `Connection failed: ${errMsg}`,
+        };
+    }
+};
+
 export const fetchVideos = async () => {
     try {
         const ip = await getServerIp();
         if (!ip) throw new Error('No Server IP configured');
 
-        const response = await fetch(`http://${ip}/videos`);
+        const response = await timeout(fetch(`http://${ip}/videos`), 8000);
         if (!response.ok) throw new Error('Failed to fetch videos');
 
         const data = await response.json();
@@ -169,9 +256,6 @@ export const fetchVideos = async () => {
         } else {
             // Local is newer or equal - keep local
             resultVideos = localVideos;
-            // NOTE: We do NOT push here. Only explicit user actions (reorder, add, delete)
-            // should push to server. This prevents overwriting server changes just because
-            // mobile's local timestamp is newer from a previous sync.
         }
 
         // Save merged tombstones
@@ -198,13 +282,13 @@ export const syncVideos = async (videos) => {
         const ip = await getServerIp();
         if (!ip) throw new Error('No Server IP configured');
 
-        const response = await fetch(`http://${ip}/sync`, {
+        const response = await timeout(fetch(`http://${ip}/sync`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ videos, timestamp, deletedVideos }),
-        });
+        }), 10000);
 
         if (!response.ok) throw new Error('Failed to sync videos');
 
@@ -291,7 +375,7 @@ export const checkStatus = async () => {
         const ip = await getServerIp();
         if (!ip) return null;
 
-        const response = await fetch(`http://${ip}/status`);
+        const response = await timeout(fetch(`http://${ip}/status`), 5000);
         if (response.ok) {
             return await response.json();
         }
@@ -301,24 +385,6 @@ export const checkStatus = async () => {
     }
 };
 
-const timeout = (promise, ms) => {
-    return new Promise((resolve, reject) => {
-        const timer = setTimeout(() => {
-            reject(new Error('TIMEOUT'));
-        }, ms);
-
-        promise
-            .then(value => {
-                clearTimeout(timer);
-                resolve(value);
-            })
-            .catch(reason => {
-                clearTimeout(timer);
-                reject(reason);
-            });
-    });
-};
-
 export const discoverServer = async (onProgress) => {
     try {
         const ip = await Network.getIpAddressAsync();
@@ -326,7 +392,8 @@ export const discoverServer = async (onProgress) => {
 
         const subnet = ip.substring(0, ip.lastIndexOf('.'));
         const port = 5000;
-        const batchSize = 20; // Smaller batch size for stability
+        const batchSize = 15;
+        const timeoutMs = 2000; // 2s timeout for cross-machine LAN requests
 
         for (let i = 1; i < 255; i += batchSize) {
             const batch = [];
@@ -335,7 +402,7 @@ export const discoverServer = async (onProgress) => {
                 const url = `http://${currentIp}:${port}/status`;
 
                 batch.push(
-                    timeout(fetch(url), 500)
+                    timeout(fetch(url), timeoutMs)
                         .then(res => res.ok ? res.json() : null)
                         .then(data => data && data.status === 'running' ? `${currentIp}:${port}` : null)
                         .catch(() => null)
@@ -369,5 +436,22 @@ export const saveTheme = async (theme) => {
         await AsyncStorage.setItem('theme', theme);
     } catch (e) {
         console.error('Failed to save theme', e);
+    }
+};
+
+export const getColorScheme = async () => {
+    try {
+        const scheme = await AsyncStorage.getItem('color_scheme');
+        return scheme || 'light';
+    } catch (e) {
+        return 'light';
+    }
+};
+
+export const saveColorScheme = async (scheme) => {
+    try {
+        await AsyncStorage.setItem('color_scheme', scheme);
+    } catch (e) {
+        console.error('Failed to save color scheme', e);
     }
 };
