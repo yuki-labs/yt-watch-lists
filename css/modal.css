@@ -146,17 +146,44 @@ body.neumorphic .modal-content {
     color: #4a4a4a;
 }
 
+body.neumorphic .modal-content h3 {
+    color: #4a4a4a;
+}
+
+/* Inset well for the scrollable list — matches #video-list and .settings-panel.open */
+body.neumorphic .modal-list {
+    background-color: #e0e5ec;
+    border-radius: 15px;
+    box-shadow: inset 5px 5px 10px #9baec8, inset -5px -5px 10px #ffffff;
+    padding: 10px;
+    margin: 12px 0;
+}
+
+/* List items become raised cards inside the well */
 body.neumorphic .modal-list-item {
-    border-bottom-color: #d1d9e6;
+    border-bottom: none;
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    background-color: #e0e5ec;
+    box-shadow: 4px 4px 8px #9baec8, -4px -4px 8px #ffffff;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+body.neumorphic .modal-list-item:last-child {
+    margin-bottom: 0;
 }
 
 body.neumorphic .modal-list-item:hover {
-    background-color: transparent;
-    box-shadow: 3px 3px 6px #9baec8, -3px -3px 6px #ffffff;
+    background-color: #e0e5ec;
+    transform: translateY(-1px);
+    box-shadow: 6px 6px 12px #9baec8, -6px -6px 12px #ffffff;
 }
 
+/* Active item pressed in */
 body.neumorphic .modal-list-item.active {
-    background-color: transparent;
+    background-color: #e0e5ec;
+    transform: none;
     box-shadow: inset 3px 3px 6px #9baec8, inset -3px -3px 6px #ffffff;
 }
 
@@ -171,10 +198,24 @@ body.neumorphic .modal-create-input {
 
 body.neumorphic .modal-icon-btn {
     color: #7a7a7a;
+    background: none;
+    box-shadow: none;
+}
+
+body.neumorphic .modal-icon-btn:hover {
+    box-shadow: none;
+    transform: none;
 }
 
 body.neumorphic .modal-cancel-btn {
     color: #7a7a7a;
+    background: none;
+    box-shadow: none;
+}
+
+body.neumorphic .modal-cancel-btn:hover {
+    box-shadow: none;
+    transform: none;
 }
 
 /* ── Dark Neumorphic ── */
@@ -184,15 +225,35 @@ body.dark.neumorphic .modal-content {
     color: #d0d0d0;
 }
 
+body.dark.neumorphic .modal-content h3 {
+    color: #d0d0d0;
+}
+
+/* Inset well — dark palette */
+body.dark.neumorphic .modal-list {
+    background-color: #2a2d32;
+    border-radius: 15px;
+    box-shadow: inset 5px 5px 10px #1e2024, inset -5px -5px 10px #363a40;
+    padding: 10px;
+    margin: 12px 0;
+}
+
+/* Raised cards — dark palette */
 body.dark.neumorphic .modal-list-item {
-    border-bottom-color: #363a40;
+    border-bottom: none;
+    border-radius: 12px;
+    background-color: #2a2d32;
+    box-shadow: 4px 4px 8px #1e2024, -4px -4px 8px #363a40;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 body.dark.neumorphic .modal-list-item:hover {
-    box-shadow: 3px 3px 6px #1e2024, -3px -3px 6px #363a40;
+    background-color: #2a2d32;
+    box-shadow: 6px 6px 12px #1e2024, -6px -6px 12px #363a40;
 }
 
 body.dark.neumorphic .modal-list-item.active {
+    background-color: #2a2d32;
     box-shadow: inset 3px 3px 6px #1e2024, inset -3px -3px 6px #363a40;
 }
 
@@ -205,8 +266,22 @@ body.dark.neumorphic .modal-create-input {
 
 body.dark.neumorphic .modal-icon-btn {
     color: #888;
+    background: none;
+    box-shadow: none;
+}
+
+body.dark.neumorphic .modal-icon-btn:hover {
+    box-shadow: none;
+    transform: none;
 }
 
 body.dark.neumorphic .modal-cancel-btn {
     color: #888;
+    background: none;
+    box-shadow: none;
+}
+
+body.dark.neumorphic .modal-cancel-btn:hover {
+    box-shadow: none;
+    transform: none;
 }

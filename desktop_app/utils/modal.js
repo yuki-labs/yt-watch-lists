@@ -48,6 +48,22 @@ export function showListModal(lists, current, onSelect, titleText = 'Select List
     listContainer.style.overflowY = 'auto';
     listContainer.style.margin = '10px 0';
 
+    // Neumorphic inset well for the list container
+    const isNeu = document.body.classList.contains('neumorphic');
+    const isDark = document.body.classList.contains('dark');
+    if (isNeu) {
+        listContainer.style.borderRadius = '15px';
+        listContainer.style.padding = '10px';
+        listContainer.style.margin = '12px 0';
+        if (isDark) {
+            listContainer.style.backgroundColor = '#2a2d32';
+            listContainer.style.boxShadow = 'inset 5px 5px 10px #1e2024, inset -5px -5px 10px #363a40';
+        } else {
+            listContainer.style.backgroundColor = '#e0e5ec';
+            listContainer.style.boxShadow = 'inset 5px 5px 10px #9baec8, inset -5px -5px 10px #ffffff';
+        }
+    }
+
     lists.forEach(filename => {
         const item = document.createElement('div');
         item.style.padding = '8px';
@@ -58,6 +74,22 @@ export function showListModal(lists, current, onSelect, titleText = 'Select List
         item.style.justifyContent = 'space-between';
         item.style.alignItems = 'center';
 
+        // Neumorphic raised card styling for items
+        if (isNeu) {
+            item.style.borderBottom = 'none';
+            item.style.borderRadius = '12px';
+            item.style.padding = '10px 12px';
+            item.style.marginBottom = '6px';
+            item.style.transition = 'box-shadow 0.2s ease, transform 0.2s ease';
+            if (isDark) {
+                item.style.backgroundColor = '#2a2d32';
+                item.style.boxShadow = '4px 4px 8px #1e2024, -4px -4px 8px #363a40';
+            } else {
+                item.style.backgroundColor = '#e0e5ec';
+                item.style.boxShadow = '4px 4px 8px #9baec8, -4px -4px 8px #ffffff';
+            }
+        }
+
         const nameSpan = document.createElement('span');
         nameSpan.textContent = filename;
         nameSpan.style.cursor = 'pointer';
@@ -65,11 +97,49 @@ export function showListModal(lists, current, onSelect, titleText = 'Select List
 
         if (filename === current) {
             item.style.fontWeight = 'bold';
-            item.style.backgroundColor = 'rgba(0,0,0,0.05)';
+            if (isNeu) {
+                // Active item: pressed in (inset shadow)
+                if (isDark) {
+                    item.style.boxShadow = 'inset 3px 3px 6px #1e2024, inset -3px -3px 6px #363a40';
+                } else {
+                    item.style.boxShadow = 'inset 3px 3px 6px #9baec8, inset -3px -3px 6px #ffffff';
+                }
+            } else {
+                item.style.backgroundColor = 'rgba(0,0,0,0.05)';
+            }
         }
 
-        item.onmouseenter = () => { if (filename !== current) item.style.backgroundColor = 'rgba(0,0,0,0.03)'; };
-        item.onmouseleave = () => { if (filename !== current) item.style.backgroundColor = 'transparent'; };
+        if (isNeu) {
+            const hoverShadow = isDark
+                ? '6px 6px 12px #1e2024, -6px -6px 12px #363a40'
+                : '6px 6px 12px #9baec8, -6px -6px 12px #ffffff';
+            const normalShadow = isDark
+                ? '4px 4px 8px #1e2024, -4px -4px 8px #363a40'
+                : '4px 4px 8px #9baec8, -4px -4px 8px #ffffff';
+            const activeShadow = isDark
+                ? 'inset 3px 3px 6px #1e2024, inset -3px -3px 6px #363a40'
+                : 'inset 3px 3px 6px #9baec8, inset -3px -3px 6px #ffffff';
+            const isActive = (filename === current);
+
+            item.onmouseenter = () => {
+                if (!isActive) {
+                    item.style.boxShadow = hoverShadow;
+                    item.style.transform = 'translateY(-1px)';
+                }
+            };
+            item.onmouseleave = () => {
+                if (!isActive) {
+                    item.style.boxShadow = normalShadow;
+                    item.style.transform = 'none';
+                } else {
+                    item.style.boxShadow = activeShadow;
+                    item.style.transform = 'none';
+                }
+            };
+        } else {
+            item.onmouseenter = () => { if (filename !== current) item.style.backgroundColor = 'rgba(0,0,0,0.03)'; };
+            item.onmouseleave = () => { if (filename !== current) item.style.backgroundColor = 'transparent'; };
+        }
 
         nameSpan.onclick = async () => {
             if (onSelect) {
@@ -89,6 +159,7 @@ export function showListModal(lists, current, onSelect, titleText = 'Select List
         renameBtn.style.cursor = 'pointer';
         renameBtn.style.color = '#999';
         renameBtn.style.marginLeft = '10px';
+        if (isNeu) { renameBtn.style.boxShadow = 'none'; }
         renameBtn.onclick = (e) => {
             e.stopPropagation();
             enterRenameMode(item, filename, nameSpan);
@@ -103,6 +174,7 @@ export function showListModal(lists, current, onSelect, titleText = 'Select List
         deleteBtn.style.cursor = 'pointer';
         deleteBtn.style.color = '#e74c3c';
         deleteBtn.style.marginLeft = '5px';
+        if (isNeu) { deleteBtn.style.boxShadow = 'none'; }
         deleteBtn.onclick = (e) => {
             e.stopPropagation();
             enterDeleteConfirm(item, filename, nameSpan, renameBtn, deleteBtn);
