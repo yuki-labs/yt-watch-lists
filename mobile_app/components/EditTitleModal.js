@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Modal, TextInput as RNTextInput, Button as RNButton } from 'react-native';
 import {
     Portal,
     Dialog,
@@ -26,11 +26,8 @@ export default function EditTitleModal({ visible, onClose, onSave, video, theme,
         }
     };
 
-    const isNeumorphic = theme === 'neumorphic';
-
-    // ─── Neumorphic fallback (plain RN Modal) ───
-    if (isNeumorphic) {
-        const { Modal, TextInput: RNTextInput, Button: RNButton } = require('react-native');
+    // ─── Neumorphic fallback ───
+    if (theme === 'neumorphic') {
         return (
             <Modal
                 animationType="slide"
@@ -65,9 +62,9 @@ export default function EditTitleModal({ visible, onClose, onSave, video, theme,
             <Dialog
                 visible={visible}
                 onDismiss={onClose}
-                style={[styles.dialog, { backgroundColor: colors.surfaceContainerHigh }]}
+                style={[m3Styles.dialog, { backgroundColor: colors.surfaceContainerHigh }]}
             >
-                <Dialog.Title style={[styles.title, { color: colors.onSurface }]}>Edit Title</Dialog.Title>
+                <Dialog.Title style={[m3Styles.title, { color: colors.onSurface }]}>Edit Title</Dialog.Title>
                 <Dialog.Content>
                     <TextInput
                         mode="outlined"
@@ -76,14 +73,14 @@ export default function EditTitleModal({ visible, onClose, onSave, video, theme,
                         onChangeText={setTitle}
                         multiline={true}
                         numberOfLines={3}
-                        style={[styles.input, { backgroundColor: colors.surfaceContainerHigh }]}
-                        outlineStyle={styles.inputOutline}
+                        style={[m3Styles.input, { backgroundColor: colors.surfaceContainerHigh }]}
+                        outlineStyle={m3Styles.inputOutline}
                         activeOutlineColor={colors.primary}
                         outlineColor={colors.outlineVariant}
                         textColor={colors.onSurface}
                     />
                 </Dialog.Content>
-                <Dialog.Actions style={styles.actions}>
+                <Dialog.Actions style={m3Styles.actions}>
                     <Button
                         mode="text"
                         onPress={onClose}
@@ -96,7 +93,7 @@ export default function EditTitleModal({ visible, onClose, onSave, video, theme,
                         onPress={handleSave}
                         buttonColor={colors.primary}
                         textColor={colors.onPrimary}
-                        style={styles.saveBtn}
+                        style={m3Styles.saveBtn}
                     >
                         Save
                     </Button>
@@ -106,8 +103,8 @@ export default function EditTitleModal({ visible, onClose, onSave, video, theme,
     );
 }
 
-// ── M3 Expressive Styles ──
-const styles = StyleSheet.create({
+// ── M3 Styles ──
+const m3Styles = StyleSheet.create({
     dialog: {
         borderRadius: 28,
     },
@@ -152,8 +149,8 @@ const neuStyles = StyleSheet.create({
     },
     input: {
         borderRadius: 15,
+        paddingVertical: 10,
         paddingHorizontal: 20,
-        padding: 10,
         marginBottom: 20,
         fontSize: 16,
         minHeight: 80,

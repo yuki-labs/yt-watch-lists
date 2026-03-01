@@ -5,7 +5,6 @@ import {
     Dialog,
     TouchableRipple,
     Text,
-    Divider,
     Button,
 } from 'react-native-paper';
 import { getColors, getNeuColors } from '../theme/m3Theme';
@@ -15,6 +14,7 @@ export default function MenuModal({ visible, onClose, onOption, video, theme, co
 
     const colors = getColors(colorScheme);
     const nc = getNeuColors(colorScheme);
+    const isDark = colorScheme === 'dark';
 
     const options = [
         { label: 'Edit Title', action: 'edit', icon: '✏️', color: colors.primary, neuColor: nc.accent },
@@ -25,31 +25,33 @@ export default function MenuModal({ visible, onClose, onOption, video, theme, co
         { label: 'Delete', action: 'delete', icon: '🗑️', color: colors.error, neuColor: nc.danger },
     ];
 
+    const handleOption = (action) => {
+        onOption(action, video);
+        onClose();
+    };
+
     const isNeumorphic = theme === 'neumorphic';
-
-    // ── Neumorphic shadows (dynamic) ──
-    const neuModalShadow = [
-        { offsetX: 12, offsetY: 12, blurRadius: 24, spreadDistance: 0, color: `${nc.shadowDark}0.6)` },
-        { offsetX: -12, offsetY: -12, blurRadius: 24, spreadDistance: 0, color: `${nc.shadowLight}0.8)` },
-    ];
-    const neuOptionBtnShadow = [
-        { offsetX: 4, offsetY: 4, blurRadius: 8, spreadDistance: 0, color: `${nc.shadowDark}0.45)` },
-        { offsetX: -4, offsetY: -4, blurRadius: 8, spreadDistance: 0, color: `${nc.shadowLight}0.65)` },
-    ];
-    const neuMoveContainerInsetShadow = [
-        { offsetX: 4, offsetY: 4, blurRadius: 10, spreadDistance: 0, color: `${nc.shadowDark}0.5)`, inset: true },
-        { offsetX: -4, offsetY: -4, blurRadius: 10, spreadDistance: 0, color: `${nc.shadowLight}0.7)`, inset: true },
-    ];
-    const neuCancelBtnShadow = [
-        { offsetX: 3, offsetY: 3, blurRadius: 6, spreadDistance: 0, color: `${nc.shadowDark}0.4)` },
-        { offsetX: -3, offsetY: -3, blurRadius: 6, spreadDistance: 0, color: `${nc.shadowLight}0.6)` },
-    ];
-
-    const isDark = colorScheme === 'dark';
-    const neuContainerBg = isDark ? '#222529' : '#d6dbe2';
 
     // ─── Neumorphic dialog ───
     if (isNeumorphic) {
+        const neuModalShadow = [
+            { offsetX: 12, offsetY: 12, blurRadius: 24, spreadDistance: 0, color: `${nc.shadowDark}0.6)` },
+            { offsetX: -12, offsetY: -12, blurRadius: 24, spreadDistance: 0, color: `${nc.shadowLight}0.8)` },
+        ];
+        const neuOptionBtnShadow = [
+            { offsetX: 4, offsetY: 4, blurRadius: 8, spreadDistance: 0, color: `${nc.shadowDark}0.45)` },
+            { offsetX: -4, offsetY: -4, blurRadius: 8, spreadDistance: 0, color: `${nc.shadowLight}0.65)` },
+        ];
+        const neuContainerInsetShadow = [
+            { offsetX: 4, offsetY: 4, blurRadius: 10, spreadDistance: 0, color: `${nc.shadowDark}0.5)`, inset: true },
+            { offsetX: -4, offsetY: -4, blurRadius: 10, spreadDistance: 0, color: `${nc.shadowLight}0.7)`, inset: true },
+        ];
+        const neuCancelBtnShadow = [
+            { offsetX: 3, offsetY: 3, blurRadius: 6, spreadDistance: 0, color: `${nc.shadowDark}0.4)` },
+            { offsetX: -3, offsetY: -3, blurRadius: 6, spreadDistance: 0, color: `${nc.shadowLight}0.6)` },
+        ];
+        const neuContainerBg = isDark ? '#222529' : '#d6dbe2';
+
         return (
             <Modal
                 animationType="fade"
@@ -61,16 +63,15 @@ export default function MenuModal({ visible, onClose, onOption, video, theme, co
                     <View style={[neuStyles.modalView, { backgroundColor: nc.base, boxShadow: neuModalShadow }]}>
                         <Text style={[neuStyles.title, { color: nc.text }]}>{video.title}</Text>
                         <ScrollView>
-                            {/* All options — inset container */}
-                            <View style={[neuStyles.moveContainer, { backgroundColor: neuContainerBg, boxShadow: neuMoveContainerInsetShadow }]}>
+                            <View style={[neuStyles.optionContainer, { backgroundColor: neuContainerBg, boxShadow: neuContainerInsetShadow }]}>
                                 {options.map((opt, i) => (
                                     <TouchableOpacity
-                                        key={i}
-                                        style={[neuStyles.moveOption, { backgroundColor: nc.base, boxShadow: neuOptionBtnShadow }]}
-                                        onPress={() => { onOption(opt.action, video); onClose(); }}
+                                        key={opt.action}
+                                        style={[neuStyles.optionBtn, { backgroundColor: nc.base, boxShadow: neuOptionBtnShadow }]}
+                                        onPress={() => handleOption(opt.action)}
                                         activeOpacity={0.7}
                                     >
-                                        <View style={neuStyles.optionRow}>
+                                        <View style={sharedStyles.optionRow}>
                                             <Text style={neuStyles.optionIcon}>{opt.icon}</Text>
                                             <Text style={[neuStyles.optionText, { color: opt.neuColor }]}>
                                                 {opt.label}
@@ -99,26 +100,26 @@ export default function MenuModal({ visible, onClose, onOption, video, theme, co
             <Dialog
                 visible={visible}
                 onDismiss={onClose}
-                style={[styles.dialog, { backgroundColor: colors.surfaceContainerHigh }]}
+                style={[m3Styles.dialog, { backgroundColor: colors.surfaceContainerHigh }]}
             >
-                <Dialog.ScrollArea style={styles.scrollArea}>
-                    <ScrollView contentContainerStyle={styles.optionList}>
-                        <View style={[styles.titleCapsule, { backgroundColor: colors.primaryContainer }]}>
-                            <Text style={[styles.title, { color: colors.onPrimaryContainer }]}>{video.title}</Text>
+                <Dialog.ScrollArea style={m3Styles.scrollArea}>
+                    <ScrollView contentContainerStyle={m3Styles.optionList}>
+                        <View style={[m3Styles.titleCapsule, { backgroundColor: colors.primaryContainer }]}>
+                            <Text style={[m3Styles.title, { color: colors.onPrimaryContainer }]}>{video.title}</Text>
                         </View>
-                        {options.map((opt, index) => (
+                        {options.map((opt) => (
                             <TouchableRipple
-                                key={index}
-                                onPress={() => { onOption(opt.action, video); onClose(); }}
+                                key={opt.action}
+                                onPress={() => handleOption(opt.action)}
                                 rippleColor={colors.primaryContainer}
-                                style={[styles.optionCapsule, { backgroundColor: colors.surfaceContainerLow }]}
+                                style={[m3Styles.optionCapsule, { backgroundColor: colors.surfaceContainerLow }]}
                                 borderless
                             >
-                                <View style={styles.optionRow}>
-                                    <Text style={styles.optionIcon}>{opt.icon}</Text>
+                                <View style={sharedStyles.optionRow}>
+                                    <Text style={m3Styles.optionIcon}>{opt.icon}</Text>
                                     <Text
                                         variant="bodyLarge"
-                                        style={[styles.optionText, { color: opt.color }]}
+                                        style={[m3Styles.optionText, { color: opt.color }]}
                                     >
                                         {opt.label}
                                     </Text>
@@ -127,7 +128,7 @@ export default function MenuModal({ visible, onClose, onOption, video, theme, co
                         ))}
                     </ScrollView>
                 </Dialog.ScrollArea>
-                <Dialog.Actions style={styles.actions}>
+                <Dialog.Actions style={m3Styles.actions}>
                     <Button
                         mode="text"
                         onPress={onClose}
@@ -141,8 +142,16 @@ export default function MenuModal({ visible, onClose, onOption, video, theme, co
     );
 }
 
-// ── M3 Expressive Styles ──
-const styles = StyleSheet.create({
+// ── Shared Styles ──
+const sharedStyles = StyleSheet.create({
+    optionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+});
+
+// ── M3 Styles ──
+const m3Styles = StyleSheet.create({
     dialog: {
         borderRadius: 28,
         maxHeight: '70%',
@@ -173,19 +182,12 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         overflow: 'hidden',
     },
-    optionRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
     optionIcon: {
         fontSize: 18,
         marginRight: 16,
     },
     optionText: {
         fontWeight: '500',
-    },
-    divider: {
-        marginHorizontal: 24,
     },
     actions: {
         paddingHorizontal: 16,
@@ -214,22 +216,18 @@ const neuStyles = StyleSheet.create({
         marginBottom: 18,
         textAlign: 'center',
     },
-    moveContainer: {
+    optionContainer: {
         borderRadius: 14,
         padding: 10,
         gap: 6,
         marginBottom: 10,
         overflow: 'visible',
     },
-    moveOption: {
+    optionBtn: {
         paddingVertical: 11,
         paddingHorizontal: 10,
         borderRadius: 10,
         overflow: 'visible',
-    },
-    optionRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
     },
     optionIcon: {
         fontSize: 16,

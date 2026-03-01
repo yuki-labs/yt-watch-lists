@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Image, TouchableOpacity, StyleSheet, Linking } from 'react-native';
-import { Surface, Text, IconButton } from 'react-native-paper';
+import { Surface, Text } from 'react-native-paper';
 import { getColors, getNeuColors } from '../theme/m3Theme';
 
 export default function VideoItem({ item, onMenu, theme, colorScheme, dragHandlers, isActive }) {
@@ -26,7 +26,7 @@ export default function VideoItem({ item, onMenu, theme, colorScheme, dragHandle
         return (
             <View style={[styles.neuCard, { backgroundColor: nc.base, boxShadow: neuCardShadow }]}>
                 <TouchableOpacity
-                    style={styles.neuCardInner}
+                    style={styles.cardInner}
                     onPress={() => Linking.openURL(item.url)}
                     activeOpacity={0.85}
                 >
@@ -46,7 +46,7 @@ export default function VideoItem({ item, onMenu, theme, colorScheme, dragHandle
                     style={[styles.neuMenuBtn, { backgroundColor: nc.base, boxShadow: neuMenuBtnShadow }]}
                     {...(dragHandlers || {})}
                 >
-                    <Text style={[styles.neuMenuIcon, { color: nc.text }]}>⋮</Text>
+                    <Text style={[styles.menuIcon, { color: nc.text }]}>⋮</Text>
                 </View>
             </View>
         );
@@ -56,7 +56,7 @@ export default function VideoItem({ item, onMenu, theme, colorScheme, dragHandle
     return (
         <Surface style={[styles.m3Card, { backgroundColor: colors.surfaceContainerLow }]} elevation={1}>
             <TouchableOpacity
-                style={styles.m3CardInner}
+                style={styles.cardInner}
                 onPress={() => Linking.openURL(item.url)}
                 activeOpacity={0.8}
             >
@@ -75,14 +75,14 @@ export default function VideoItem({ item, onMenu, theme, colorScheme, dragHandle
                     </Text>
                     <Text
                         variant="bodySmall"
-                        style={[styles.m3Url, { color: colors.onSurfaceVariant }]}
+                        style={{ color: colors.onSurfaceVariant }}
                         numberOfLines={1}
                     >
                         {item.url}
                     </Text>
                 </View>
                 <View {...(dragHandlers || {})} style={styles.m3MenuBtn}>
-                    <Text style={[styles.m3MenuIcon, { color: colors.onSurfaceVariant }]}>⋮</Text>
+                    <Text style={[styles.menuIcon, { color: colors.onSurfaceVariant }]}>⋮</Text>
                 </View>
             </TouchableOpacity>
         </Surface>
@@ -90,15 +90,22 @@ export default function VideoItem({ item, onMenu, theme, colorScheme, dragHandle
 }
 
 const styles = StyleSheet.create({
+    // ── Shared ──
+    cardInner: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    menuIcon: {
+        fontSize: 20,
+        fontWeight: 'bold',
+    },
+
     // ── M3 Expressive ──
     m3Card: {
         borderRadius: 20,
         marginBottom: 12,
         overflow: 'hidden',
-    },
-    m3CardInner: {
-        flexDirection: 'row',
-        alignItems: 'center',
     },
     m3Thumbnail: {
         width: 140,
@@ -116,17 +123,11 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         marginBottom: 4,
     },
-    m3Url: {},
     m3MenuBtn: {
-        margin: 0,
         width: 40,
         height: 40,
         justifyContent: 'center',
         alignItems: 'center',
-    },
-    m3MenuIcon: {
-        fontSize: 20,
-        fontWeight: 'bold',
     },
 
     // ── Neumorphic ──
@@ -135,11 +136,6 @@ const styles = StyleSheet.create({
         marginBottom: 24,
         padding: 14,
         overflow: 'visible',
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    neuCardInner: {
-        flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
     },
@@ -174,9 +170,5 @@ const styles = StyleSheet.create({
         height: 38,
         alignItems: 'center',
         justifyContent: 'center',
-    },
-    neuMenuIcon: {
-        fontSize: 18,
-        fontWeight: '700',
     },
 });

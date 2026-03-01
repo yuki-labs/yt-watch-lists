@@ -35,7 +35,6 @@ function AppContent({ hasIp, showSettings, setHasIp, setShowSettings, theme, col
           onBack={hasIp ? () => setShowSettings(false) : null}
           theme={theme}
           colorScheme={colorScheme}
-          onToggleColorScheme={onToggleColorScheme}
         />
       )}
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />

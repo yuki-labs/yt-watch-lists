@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Text } from 'react-native-paper';
 import { getColors, getNeuColors } from '../theme/m3Theme';
+import { getServerIp, setServerIp, discoverServer, testConnection, getDeviceIp } from '../api';
 import { useThemeTransition } from '../theme/ThemeTransition';
 
 export default function SettingsScreen({ onSave, onBack, theme, colorScheme }) {
@@ -23,10 +24,11 @@ export default function SettingsScreen({ onSave, onBack, theme, colorScheme }) {
     const { progress, animateToTheme } = useThemeTransition();
 
     const isNeu = theme === 'neumorphic';
+    const isDark = colorScheme === 'dark';
     const colors = getColors(colorScheme);
     const nc = getNeuColors(colorScheme);
 
-    // ── Neumorphic boxShadow definitions (dynamic) ──
+    // ── Neumorphic boxShadow definitions ──
     const neuCardShadow = [
         { offsetX: 6, offsetY: 6, blurRadius: 14, spreadDistance: 0, color: `${nc.shadowDark}0.55)` },
         { offsetX: -6, offsetY: -6, blurRadius: 14, spreadDistance: 0, color: `${nc.shadowLight}0.75)` },
@@ -54,17 +56,14 @@ export default function SettingsScreen({ onSave, onBack, theme, colorScheme }) {
     const noShadow = [];
 
     // ─── Animated interpolations ───
-    const isDark = colorScheme === 'dark';
     const neuTrackBg = isDark ? '#1e2024' : '#bec8d4';
     const neuInputBg = isDark ? '#1e2024' : '#d1d9e6';
 
-    // Container
     const containerBg = progress.interpolate({
         inputRange: [0, 1],
         outputRange: [colors.surface, nc.base],
     });
 
-    // Cards
     const cardBg = progress.interpolate({
         inputRange: [0, 1],
         outputRange: [colors.surfaceContainerLow, nc.base],
@@ -78,7 +77,6 @@ export default function SettingsScreen({ onSave, onBack, theme, colorScheme }) {
         outputRange: [16, 24],
     });
 
-    // Text
     const headingColor = progress.interpolate({
         inputRange: [0, 1],
         outputRange: [colors.onSurface, nc.text],
@@ -87,12 +85,7 @@ export default function SettingsScreen({ onSave, onBack, theme, colorScheme }) {
         inputRange: [0, 1],
         outputRange: [colors.onSurfaceVariant, nc.textSecondary],
     });
-    const labelColor = progress.interpolate({
-        inputRange: [0, 1],
-        outputRange: [colors.onSurface, nc.text],
-    });
 
-    // Input
     const inputBg = progress.interpolate({
         inputRange: [0, 1],
         outputRange: [colors.surfaceContainerHigh, neuInputBg],
@@ -110,7 +103,6 @@ export default function SettingsScreen({ onSave, onBack, theme, colorScheme }) {
         outputRange: [16, 50],
     });
 
-    // Primary button
     const primaryBtnBg = progress.interpolate({
         inputRange: [0, 1],
         outputRange: [colors.primary, nc.base],
@@ -124,7 +116,6 @@ export default function SettingsScreen({ onSave, onBack, theme, colorScheme }) {
         outputRange: [28, 15],
     });
 
-    // Secondary button
     const secondaryBtnBg = progress.interpolate({
         inputRange: [0, 1],
         outputRange: [colors.secondaryContainer, nc.base],
@@ -134,13 +125,11 @@ export default function SettingsScreen({ onSave, onBack, theme, colorScheme }) {
         outputRange: [colors.onSecondaryContainer, nc.textSecondary],
     });
 
-    // Header
     const headerBg = progress.interpolate({
         inputRange: [0, 1],
         outputRange: [colors.surfaceContainerLow, nc.base],
     });
 
-    // Switch
     const switchTrackBg = progress.interpolate({
         inputRange: [0, 1],
         outputRange: [colors.surfaceContainerHighest, neuTrackBg],
@@ -178,8 +167,6 @@ export default function SettingsScreen({ onSave, onBack, theme, colorScheme }) {
         loadIp();
         loadDeviceIp();
     }, []);
-
-    const { getServerIp, setServerIp, discoverServer, testConnection, getDeviceIp } = require('../api');
 
     const loadIp = async () => {
         const savedIp = await getServerIp();
@@ -241,12 +228,11 @@ export default function SettingsScreen({ onSave, onBack, theme, colorScheme }) {
         animateToTheme(val ? 'neumorphic' : 'default');
     };
 
-    // ── boxShadow applied based on current theme state ──
+    // ── Shadow selection based on current theme ──
     const currentCardShadow = isNeu ? neuCardShadow : m3CardShadow;
     const currentBtnShadow = isNeu ? neuBtnShadow : noShadow;
     const currentInputShadow = isNeu ? neuInputInsetShadow : noShadow;
 
-    // Shared card style
     const cardAnimStyle = {
         backgroundColor: cardBg,
         borderRadius: cardRadius,
@@ -279,7 +265,7 @@ export default function SettingsScreen({ onSave, onBack, theme, colorScheme }) {
 
                 {/* ── Device Info Card ── */}
                 <Animated.View style={[styles.card, cardAnimStyle, { boxShadow: currentCardShadow }]}>
-                    <Animated.Text style={[styles.cardLabel, { color: labelColor }]}>
+                    <Animated.Text style={[styles.cardLabel, { color: headingColor }]}>
                         Network Info
                     </Animated.Text>
                     <Animated.Text style={[styles.hint, { color: subtitleColor }]}>
@@ -294,7 +280,7 @@ export default function SettingsScreen({ onSave, onBack, theme, colorScheme }) {
 
                 {/* ── IP Card ── */}
                 <Animated.View style={[styles.card, cardAnimStyle, { boxShadow: currentCardShadow }]}>
-                    <Animated.Text style={[styles.cardLabel, { color: labelColor }]}>
+                    <Animated.Text style={[styles.cardLabel, { color: headingColor }]}>
                         Desktop Server IP
                     </Animated.Text>
                     <Animated.Text style={[styles.hint, { color: subtitleColor }]}>
@@ -343,7 +329,7 @@ export default function SettingsScreen({ onSave, onBack, theme, colorScheme }) {
                             </Animated.View>
                         </TouchableOpacity>
 
-                        <View style={{ width: 10 }} />
+                        <View style={styles.btnSpacer} />
 
                         <TouchableOpacity activeOpacity={0.7} onPress={handleSave} style={styles.buttonHalf}>
                             <Animated.View style={[
@@ -384,7 +370,7 @@ export default function SettingsScreen({ onSave, onBack, theme, colorScheme }) {
                 <Animated.View style={[styles.card, cardAnimStyle, { boxShadow: currentCardShadow }]}>
                     <View style={styles.row}>
                         <View style={styles.rowText}>
-                            <Animated.Text style={[styles.cardLabel, { color: labelColor }]}>
+                            <Animated.Text style={[styles.cardLabel, { color: headingColor }]}>
                                 Neumorphic Theme
                             </Animated.Text>
                             <Animated.Text style={[styles.hintSmall, { color: subtitleColor }]}>
@@ -528,6 +514,9 @@ const styles = StyleSheet.create({
     buttonHalf: {
         flex: 1,
     },
+    btnSpacer: {
+        width: 10,
+    },
     btn: {
         paddingVertical: 14,
         alignItems: 'center',
@@ -566,9 +555,7 @@ const styles = StyleSheet.create({
     switchTrack: {
         justifyContent: 'center',
     },
-    switchThumb: {
-        // sizes controlled by animated values
-    },
+    switchThumb: {},
     scanningContainer: {
         flexDirection: 'row',
         alignItems: 'center',

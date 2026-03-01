@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Modal, TextInput as RNTextInput, Button as RNButton } from 'react-native';
 import {
     Portal,
     Dialog,
@@ -23,11 +23,13 @@ export default function AddVideoModal({ visible, onClose, onAdd, theme, colorSch
         }
     };
 
-    const isNeumorphic = theme === 'neumorphic';
+    const handleCancel = () => {
+        setUrl('');
+        onClose();
+    };
 
-    // ─── Neumorphic fallback (plain RN Modal) ───
-    if (isNeumorphic) {
-        const { Modal, TextInput: RNTextInput, Button: RNButton } = require('react-native');
+    // ─── Neumorphic fallback ───
+    if (theme === 'neumorphic') {
         return (
             <Modal
                 animationType="slide"
@@ -47,7 +49,7 @@ export default function AddVideoModal({ visible, onClose, onAdd, theme, colorSch
                             placeholderTextColor={nc.placeholderText}
                         />
                         <View style={neuStyles.buttons}>
-                            <RNButton title="Cancel" onPress={onClose} color={nc.textSecondary} />
+                            <RNButton title="Cancel" onPress={handleCancel} color={nc.textSecondary} />
                             <RNButton title="Add" onPress={handleAdd} color={nc.accent} />
                         </View>
                     </View>
@@ -62,9 +64,9 @@ export default function AddVideoModal({ visible, onClose, onAdd, theme, colorSch
             <Dialog
                 visible={visible}
                 onDismiss={onClose}
-                style={[styles.dialog, { backgroundColor: colors.surfaceContainerHigh }]}
+                style={[m3Styles.dialog, { backgroundColor: colors.surfaceContainerHigh }]}
             >
-                <Dialog.Title style={[styles.title, { color: colors.onSurface }]}>Add Video Link</Dialog.Title>
+                <Dialog.Title style={[m3Styles.title, { color: colors.onSurface }]}>Add Video Link</Dialog.Title>
                 <Dialog.Content>
                     <TextInput
                         mode="outlined"
@@ -73,17 +75,17 @@ export default function AddVideoModal({ visible, onClose, onAdd, theme, colorSch
                         value={url}
                         onChangeText={setUrl}
                         autoCapitalize="none"
-                        style={[styles.input, { backgroundColor: colors.surfaceContainerHigh }]}
-                        outlineStyle={styles.inputOutline}
+                        style={{ backgroundColor: colors.surfaceContainerHigh }}
+                        outlineStyle={m3Styles.inputOutline}
                         activeOutlineColor={colors.primary}
                         outlineColor={colors.outlineVariant}
                         textColor={colors.onSurface}
                     />
                 </Dialog.Content>
-                <Dialog.Actions style={styles.actions}>
+                <Dialog.Actions style={m3Styles.actions}>
                     <Button
                         mode="text"
-                        onPress={() => { setUrl(''); onClose(); }}
+                        onPress={handleCancel}
                         textColor={colors.onSurfaceVariant}
                     >
                         Cancel
@@ -93,7 +95,7 @@ export default function AddVideoModal({ visible, onClose, onAdd, theme, colorSch
                         onPress={handleAdd}
                         buttonColor={colors.primary}
                         textColor={colors.onPrimary}
-                        style={styles.addBtn}
+                        style={m3Styles.addBtn}
                     >
                         Add
                     </Button>
@@ -103,15 +105,14 @@ export default function AddVideoModal({ visible, onClose, onAdd, theme, colorSch
     );
 }
 
-// ── M3 Expressive Styles ──
-const styles = StyleSheet.create({
+// ── M3 Styles ──
+const m3Styles = StyleSheet.create({
     dialog: {
         borderRadius: 28,
     },
     title: {
         fontWeight: '600',
     },
-    input: {},
     inputOutline: {
         borderRadius: 16,
     },
@@ -147,8 +148,8 @@ const neuStyles = StyleSheet.create({
     },
     input: {
         borderRadius: 50,
+        paddingVertical: 10,
         paddingHorizontal: 20,
-        padding: 10,
         marginBottom: 20,
         fontSize: 16,
         borderWidth: 0,

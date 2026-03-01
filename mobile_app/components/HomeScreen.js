@@ -7,6 +7,8 @@ import {
     Animated,
     Keyboard,
     Pressable,
+    TouchableOpacity,
+    TextInput,
 } from 'react-native';
 import {
     Appbar,
@@ -18,7 +20,7 @@ import {
     Icon,
 } from 'react-native-paper';
 import DraggableList from './DraggableList';
-import { fetchVideos, syncVideos, checkStatus, addVideo, deleteVideo, getLocalVideos, getLocalTimestamp } from '../api';
+import { fetchVideos, syncVideos, checkStatus, addVideo, deleteVideo, getLocalVideos } from '../api';
 import VideoItem from './VideoItem';
 import MenuModal from './MenuModal';
 import EditTitleModal from './EditTitleModal';
@@ -95,7 +97,7 @@ export default function HomeScreen({ onSettings, theme, colorScheme, onToggleCol
     const colors = getColors(colorScheme);
     const nc = getNeuColors(colorScheme);
     const neuShadows = getNeuShadows(colorScheme);
-    const isDark = colorScheme === 'dark';
+    const darkModeIcon = colorScheme === 'dark' ? 'weather-sunny' : 'weather-night';
 
     // Initial load
     useEffect(() => {
@@ -163,16 +165,13 @@ export default function HomeScreen({ onSettings, theme, colorScheme, onToggleCol
         v.id.includes(searchQuery)
     );
 
-    // Whether we're searching (disable drag during search since order wouldn't map correctly)
     const isSearching = searchQuery.length > 0;
 
-    // Handler for drag-to-reorder completion
     const handleDragEnd = useCallback(async ({ data }) => {
-        if (isSearching) return; // Don't reorder during search
+        if (isSearching) return;
         await syncAndUpdate(data);
     }, [isSearching, videos]);
 
-    // Handler for adding a video
     const handleAddVideo = async (url) => {
         const videoId = extractVideoId(url);
         if (!videoId) {
@@ -204,7 +203,6 @@ export default function HomeScreen({ onSettings, theme, colorScheme, onToggleCol
         }
     };
 
-    // Handler for menu options
     const handleMenuOption = async (action, video) => {
         const index = videos.findIndex(v => v.id === video.id);
         if (index === -1) return;
@@ -249,7 +247,6 @@ export default function HomeScreen({ onSettings, theme, colorScheme, onToggleCol
         await syncVideos(newVideos);
     };
 
-    // Handler for editing title
     const handleEditTitle = async (videoId, newTitle) => {
         const newVideos = videos.map(v =>
             v.id === videoId ? { ...v, title: newTitle } : v
@@ -258,11 +255,59 @@ export default function HomeScreen({ onSettings, theme, colorScheme, onToggleCol
     };
 
     const isNeumorphic = theme === 'neumorphic';
-    const darkModeIcon = isDark ? 'weather-sunny' : 'weather-night';
+
+    // Shared modal/list rendering helpers
+    const renderVideoItem = useCallback(({ item, dragHandlers, isActive }) => (
+        <VideoItem
+            item={item}
+            theme={theme}
+            colorScheme={colorScheme}
+            isActive={isActive}
+            dragHandlers={isSearching ? undefined : dragHandlers}
+            onMenu={(v) => {
+                setSelectedVideo(v);
+                setMenuVisible(true);
+            }}
+        />
+    ), [theme, colorScheme, isSearching]);
+
+    const handleItemTap = useCallback((index) => {
+        const v = isSearching ? filteredVideos[index] : videos[index];
+        if (v) { setSelectedVideo(v); setMenuVisible(true); }
+    }, [isSearching, filteredVideos, videos]);
+
+    const modals = (
+        <>
+            <AddVideoModal
+                visible={addModalVisible}
+                onClose={() => setAddModalVisible(false)}
+                onAdd={handleAddVideo}
+                theme={theme}
+                colorScheme={colorScheme}
+            />
+            <MenuModal
+                visible={menuVisible}
+                video={selectedVideo}
+                onClose={() => setMenuVisible(false)}
+                onOption={handleMenuOption}
+                theme={theme}
+                colorScheme={colorScheme}
+            />
+            <EditTitleModal
+                visible={editTitleVisible}
+                video={selectedVideo}
+                onClose={() => setEditTitleVisible(false)}
+                onSave={handleEditTitle}
+                theme={theme}
+                colorScheme={colorScheme}
+            />
+        </>
+    );
+
+    const listData = isSearching ? filteredVideos : videos;
 
     // ─── Neumorphic layout ───
     if (isNeumorphic) {
-        const { TouchableOpacity, TextInput } = require('react-native');
         const settingsBtnShadow = [
             { offsetX: 4, offsetY: 4, blurRadius: 8, spreadDistance: 0, color: `${nc.shadowDark}0.5)` },
             { offsetX: -4, offsetY: -4, blurRadius: 8, spreadDistance: 0, color: `${nc.shadowLight}0.7)` },
@@ -301,16 +346,14 @@ export default function HomeScreen({ onSettings, theme, colorScheme, onToggleCol
                     <Text style={[styles.neuTitleText, { color: nc.text }]}>
                         Watch Later {isOffline ? '(Offline)' : ''}
                     </Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <View style={styles.neuButtonGroup}>
                         <IconButton
                             icon={() => <CrossFadeIcon name={darkModeIcon} size={22} color={nc.text} />}
                             onPress={onToggleColorScheme}
                             containerColor={nc.base}
                             rippleColor="transparent"
                             size={22}
-                            style={[styles.neuSettingsBtn, {
-                                boxShadow: settingsBtnShadow,
-                            }]}
+                            style={[styles.neuSettingsBtn, { boxShadow: settingsBtnShadow }]}
                         />
                         <IconButton
                             icon="cog"
@@ -318,9 +361,7 @@ export default function HomeScreen({ onSettings, theme, colorScheme, onToggleCol
                             iconColor={nc.text}
                             containerColor={nc.base}
                             size={22}
-                            style={[styles.neuSettingsBtn, {
-                                boxShadow: settingsBtnShadow,
-                            }]}
+                            style={[styles.neuSettingsBtn, { boxShadow: settingsBtnShadow }]}
                         />
                     </View>
                 </Pressable>
@@ -341,26 +382,11 @@ export default function HomeScreen({ onSettings, theme, colorScheme, onToggleCol
                     boxShadow: listContainerShadow,
                 }]}>
                     <DraggableList
-                        data={isSearching ? filteredVideos : videos}
-                        renderItem={({ item, dragHandlers, isActive }) => (
-                            <VideoItem
-                                item={item}
-                                theme={theme}
-                                colorScheme={colorScheme}
-                                isActive={isActive}
-                                dragHandlers={isSearching ? undefined : dragHandlers}
-                                onMenu={(v) => {
-                                    setSelectedVideo(v);
-                                    setMenuVisible(true);
-                                }}
-                            />
-                        )}
+                        data={listData}
+                        renderItem={renderVideoItem}
                         keyExtractor={item => item.id}
                         onDragEnd={handleDragEnd}
-                        onItemTap={(index) => {
-                            const v = isSearching ? filteredVideos[index] : videos[index];
-                            if (v) { setSelectedVideo(v); setMenuVisible(true); }
-                        }}
+                        onItemTap={handleItemTap}
                         refreshControl={
                             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
                         }
@@ -378,39 +404,17 @@ export default function HomeScreen({ onSettings, theme, colorScheme, onToggleCol
                     <Text style={[styles.neuFabText, { color: nc.text }]}>+</Text>
                 </TouchableOpacity>
 
-                <AddVideoModal
-                    visible={addModalVisible}
-                    onClose={() => setAddModalVisible(false)}
-                    onAdd={handleAddVideo}
-                    theme={theme}
-                    colorScheme={colorScheme}
-                />
-                <MenuModal
-                    visible={menuVisible}
-                    video={selectedVideo}
-                    onClose={() => setMenuVisible(false)}
-                    onOption={handleMenuOption}
-                    theme={theme}
-                    colorScheme={colorScheme}
-                />
-                <EditTitleModal
-                    visible={editTitleVisible}
-                    video={selectedVideo}
-                    onClose={() => setEditTitleVisible(false)}
-                    onSave={handleEditTitle}
-                    theme={theme}
-                    colorScheme={colorScheme}
-                />
-            </View >
+                {modals}
+            </View>
         );
     }
 
     // ─── M3 Expressive layout ───
     return (
-        <View style={[styles.m3Container, { backgroundColor: colors.surface }]}>
+        <View style={[styles.container, { backgroundColor: colors.surface }]}>
             <Pressable onPress={Keyboard.dismiss}>
                 <Appbar.Header
-                    style={[styles.m3Appbar, { backgroundColor: colors.surfaceContainerLow }]}
+                    style={{ backgroundColor: colors.surfaceContainerLow }}
                     elevated
                 >
                     <Appbar.Content
@@ -431,7 +435,7 @@ export default function HomeScreen({ onSettings, theme, colorScheme, onToggleCol
                 <Banner
                     visible={true}
                     icon="wifi-off"
-                    style={[styles.m3Banner, { backgroundColor: colors.tertiaryContainer }]}
+                    style={{ backgroundColor: colors.tertiaryContainer }}
                 >
                     No connection — changes saved locally.
                 </Banner>
@@ -451,26 +455,11 @@ export default function HomeScreen({ onSettings, theme, colorScheme, onToggleCol
             </View>
 
             <DraggableList
-                data={isSearching ? filteredVideos : videos}
-                renderItem={({ item, dragHandlers, isActive }) => (
-                    <VideoItem
-                        item={item}
-                        theme={theme}
-                        colorScheme={colorScheme}
-                        isActive={isActive}
-                        dragHandlers={isSearching ? undefined : dragHandlers}
-                        onMenu={(v) => {
-                            setSelectedVideo(v);
-                            setMenuVisible(true);
-                        }}
-                    />
-                )}
+                data={listData}
+                renderItem={renderVideoItem}
                 keyExtractor={item => item.id}
                 onDragEnd={handleDragEnd}
-                onItemTap={(index) => {
-                    const v = isSearching ? filteredVideos[index] : videos[index];
-                    if (v) { setSelectedVideo(v); setMenuVisible(true); }
-                }}
+                onItemTap={handleItemTap}
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
@@ -479,54 +468,31 @@ export default function HomeScreen({ onSettings, theme, colorScheme, onToggleCol
                         progressBackgroundColor={colors.surfaceContainerHigh}
                     />
                 }
-                contentContainerStyle={styles.list}
+                contentContainerStyle={styles.m3ListContent}
             />
 
             <FAB
                 icon="plus"
-                style={[styles.m3Fab, { backgroundColor: colors.primaryContainer }]}
+                style={[styles.fab, { backgroundColor: colors.primaryContainer }]}
                 color={colors.onPrimaryContainer}
                 onPress={() => setAddModalVisible(true)}
             />
 
-            <AddVideoModal
-                visible={addModalVisible}
-                onClose={() => setAddModalVisible(false)}
-                onAdd={handleAddVideo}
-                theme={theme}
-                colorScheme={colorScheme}
-            />
-            <MenuModal
-                visible={menuVisible}
-                video={selectedVideo}
-                onClose={() => setMenuVisible(false)}
-                onOption={handleMenuOption}
-                theme={theme}
-                colorScheme={colorScheme}
-            />
-            <EditTitleModal
-                visible={editTitleVisible}
-                video={selectedVideo}
-                onClose={() => setEditTitleVisible(false)}
-                onSave={handleEditTitle}
-                theme={theme}
-                colorScheme={colorScheme}
-            />
+            {modals}
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    // ── M3 Expressive ──
-    m3Container: {
+    container: {
         flex: 1,
     },
-    m3Appbar: {},
+
+    // ── M3 Expressive ──
     m3AppbarTitle: {
         fontWeight: '700',
         fontSize: 22,
     },
-    m3Banner: {},
     m3SearchContainer: {
         paddingHorizontal: 16,
         paddingTop: 6,
@@ -539,22 +505,19 @@ const styles = StyleSheet.create({
     m3SearchInput: {
         fontSize: 16,
     },
-    m3Fab: {
+    m3ListContent: {
+        paddingHorizontal: 12,
+        paddingTop: 4,
+        paddingBottom: 88,
+    },
+    fab: {
         position: 'absolute',
         right: 16,
         bottom: 24,
         borderRadius: 28,
     },
-    list: {
-        paddingHorizontal: 12,
-        paddingTop: 4,
-        paddingBottom: 88,
-    },
 
     // ── Neumorphic ──
-    container: {
-        flex: 1,
-    },
     neuHeader: {
         paddingHorizontal: 15,
         paddingTop: 50,
@@ -571,6 +534,11 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: 'bold',
     },
+    neuButtonGroup: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
     neuSettingsBtn: {
         borderRadius: 22,
         width: 44,
@@ -583,8 +551,6 @@ const styles = StyleSheet.create({
         flex: 1,
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
-        borderBottomLeftRadius: 0,
-        borderBottomRightRadius: 0,
         overflow: 'hidden',
     },
     neuListContent: {
