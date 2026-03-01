@@ -121,6 +121,24 @@ export async function renameList(oldFilename, newFilename) {
     }
 }
 
+export async function deleteList(filename) {
+    try {
+        const response = await fetch('http://127.0.0.1:5000/lists/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename })
+        });
+        if (response.ok) {
+            return await response.json();
+        } else {
+            const data = await response.json().catch(() => ({}));
+            return { success: false, error: data.error || 'Failed to delete list' };
+        }
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+}
+
 export async function fetchRemoteVideos() {
     try {
         const response = await fetch('http://127.0.0.1:5000/videos');

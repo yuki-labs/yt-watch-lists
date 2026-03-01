@@ -212,6 +212,55 @@ function initServer() {
             } catch (e) {
                 throw new Error('Failed to rename: ' + e.message);
             }
+        },
+        deleteList: async (filename) => {
+            if (!savePath) throw new Error('No directory selected');
+            const dir = path.dirname(savePath);
+            const fs = require('fs');
+
+            if (!filename.endsWith('.json')) filename += '.json';
+            const filePath = path.join(dir, filename);
+
+            if (!fs.existsSync(filePath)) throw new Error('List does not exist');
+
+            // Don't allow deleting the last list
+            const allFiles = fs.readdirSync(dir).filter(f => f.endsWith('.json') && !f.endsWith('_tombstones.json'));
+            if (allFiles.length <= 1) throw new Error('Cannot delete the last remaining list');
+
+            try {
+                // Delete the list file
+                fs.unlinkSync(filePath);
+
+                // Also delete tombstone file if it exists
+                const tombstonePath = filePath.replace('.json', '_tombstones.json');
+                if (fs.existsSync(tombstonePath)) {
+                    fs.unlinkSync(tombstonePath);
+                }
+
+                // If we deleted the CURRENT list, switch to another one
+                if (savePath === filePath) {
+                    const remaining = fs.readdirSync(dir).filter(f => f.endsWith('.json') && !f.endsWith('_tombstones.json'));
+                    if (remaining.length > 0) {
+                        savePath = path.join(dir, remaining[0]);
+                        saveConfig(savePath);
+                        // Load the new current list
+                        const fileContent = fs.readFileSync(savePath, 'utf-8');
+                        let videos = [];
+                        try {
+                            const parsed = JSON.parse(fileContent);
+                            videos = Array.isArray(parsed) ? parsed : (parsed.videos || []);
+                        } catch (e) { videos = []; }
+                        updateVideos(videos, Date.now());
+                        if (mainWindow) {
+                            mainWindow.webContents.send('sync-update', videos);
+                        }
+                    }
+                }
+
+                return { success: true };
+            } catch (e) {
+                throw new Error('Failed to delete: ' + e.message);
+            }
         }
     };
 
@@ -486,6 +535,54 @@ ipcMain.handle('rename-list', async (event, { oldFilename, newFilename }) => {
             savePath = newPath;
             saveConfig(savePath);
         }
+        return { success: true };
+    } catch (e) {
+        return { success: false, error: e.message };
+    }
+});
+
+ipcMain.handle('delete-list', async (event, filename) => {
+    if (!savePath) return { success: false, error: 'No directory selected' };
+    const dir = path.dirname(savePath);
+    const fs = require('fs');
+
+    if (!filename.endsWith('.json')) filename += '.json';
+    const filePath = path.join(dir, filename);
+
+    if (!fs.existsSync(filePath)) return { success: false, error: 'List does not exist' };
+
+    // Don't allow deleting the last list
+    const allFiles = fs.readdirSync(dir).filter(f => f.endsWith('.json') && !f.endsWith('_tombstones.json'));
+    if (allFiles.length <= 1) return { success: false, error: 'Cannot delete the last remaining list' };
+
+    try {
+        fs.unlinkSync(filePath);
+
+        // Delete tombstone file if exists
+        const tombstonePath = filePath.replace('.json', '_tombstones.json');
+        if (fs.existsSync(tombstonePath)) {
+            fs.unlinkSync(tombstonePath);
+        }
+
+        // If we deleted the CURRENT list, switch to another one
+        if (savePath === filePath) {
+            const remaining = fs.readdirSync(dir).filter(f => f.endsWith('.json') && !f.endsWith('_tombstones.json'));
+            if (remaining.length > 0) {
+                savePath = path.join(dir, remaining[0]);
+                saveConfig(savePath);
+                const fileContent = fs.readFileSync(savePath, 'utf-8');
+                let videos = [];
+                try {
+                    const parsed = JSON.parse(fileContent);
+                    videos = Array.isArray(parsed) ? parsed : (parsed.videos || []);
+                } catch (e) { videos = []; }
+                updateVideos(videos, Date.now());
+                if (mainWindow) {
+                    mainWindow.webContents.send('sync-update', videos);
+                }
+            }
+        }
+
         return { success: true };
     } catch (e) {
         return { success: false, error: e.message };

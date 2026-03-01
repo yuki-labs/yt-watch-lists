@@ -39,6 +39,10 @@ export async function renameList(oldFilename, newFilename) {
     return await ipcRenderer.invoke('rename-list', { oldFilename, newFilename });
 }
 
+export async function deleteList(filename) {
+    return await ipcRenderer.invoke('delete-list', filename);
+}
+
 export async function getDeletedVideos() {
     return await ipcRenderer.invoke('get-deleted-videos');
 }

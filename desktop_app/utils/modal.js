@@ -1,4 +1,4 @@
-import { createList, switchList, renameList } from './ipc.js';
+import { createList, switchList, renameList, deleteList } from './ipc.js';
 
 export function showListModal(lists, current, onSelect, titleText = 'Select List') {
     const existingModal = document.getElementById('list-modal');
@@ -94,8 +94,23 @@ export function showListModal(lists, current, onSelect, titleText = 'Select List
             enterRenameMode(item, filename, nameSpan);
         };
 
+        // Delete Button
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerHTML = '🗑';
+        deleteBtn.title = 'Delete List';
+        deleteBtn.style.background = 'none';
+        deleteBtn.style.border = 'none';
+        deleteBtn.style.cursor = 'pointer';
+        deleteBtn.style.color = '#e74c3c';
+        deleteBtn.style.marginLeft = '5px';
+        deleteBtn.onclick = (e) => {
+            e.stopPropagation();
+            enterDeleteConfirm(item, filename, nameSpan, renameBtn, deleteBtn);
+        };
+
         item.appendChild(nameSpan);
         item.appendChild(renameBtn);
+        item.appendChild(deleteBtn);
         listContainer.appendChild(item);
     });
 
@@ -162,6 +177,16 @@ export function showListModal(lists, current, onSelect, titleText = 'Select List
             rb.style.marginLeft = '10px';
             rb.onclick = (e) => { e.stopPropagation(); enterRenameMode(itemContainer, oldName, nameSpan); };
             itemContainer.appendChild(rb);
+
+            const db = document.createElement('button');
+            db.innerHTML = '🗑';
+            db.style.background = 'none';
+            db.style.border = 'none';
+            db.style.cursor = 'pointer';
+            db.style.color = '#e74c3c';
+            db.style.marginLeft = '5px';
+            db.onclick = (e) => { e.stopPropagation(); enterDeleteConfirm(itemContainer, oldName, nameSpan, rb, db); };
+            itemContainer.appendChild(db);
         };
 
         saveBtn.onclick = (e) => { e.stopPropagation(); finish(); };
@@ -176,6 +201,61 @@ export function showListModal(lists, current, onSelect, titleText = 'Select List
         itemContainer.appendChild(saveBtn);
         itemContainer.appendChild(cancelBtn);
         input.focus();
+    }
+
+    function enterDeleteConfirm(itemContainer, filename, nameSpan, renameBtn, deleteBtn) {
+        if (filename === current) {
+            alert('Cannot delete the active list. Switch to another list first.');
+            return;
+        }
+
+        itemContainer.innerHTML = '';
+
+        const prompt = document.createElement('span');
+        prompt.textContent = `Delete ${filename.replace('.json', '')}?`;
+        prompt.style.color = '#e74c3c';
+
+        const confirmBtn = document.createElement('button');
+        confirmBtn.textContent = '✔';
+        confirmBtn.style.background = 'none';
+        confirmBtn.style.border = 'none';
+        confirmBtn.style.cursor = 'pointer';
+        confirmBtn.style.color = 'red';
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = '✘';
+        cancelBtn.style.background = 'none';
+        cancelBtn.style.border = 'none';
+        cancelBtn.style.cursor = 'pointer';
+
+        const doDelete = async () => {
+            try {
+                const res = await deleteList(filename);
+                if (res.success) {
+                    itemContainer.remove();
+                } else {
+                    alert('Delete failed: ' + res.error);
+                    resetDelete();
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+                resetDelete();
+            }
+        };
+
+        const resetDelete = () => {
+            itemContainer.innerHTML = '';
+            itemContainer.appendChild(nameSpan);
+            itemContainer.appendChild(renameBtn);
+            itemContainer.appendChild(deleteBtn);
+        };
+
+        confirmBtn.onclick = (e) => { e.stopPropagation(); doDelete(); };
+        cancelBtn.onclick = (e) => { e.stopPropagation(); resetDelete(); };
+
+        itemContainer.appendChild(prompt);
+        itemContainer.appendChild(confirmBtn);
+        itemContainer.appendChild(cancelBtn);
     }
 
     const newBtn = document.createElement('button');

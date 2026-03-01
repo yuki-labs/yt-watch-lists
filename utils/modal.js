@@ -1,4 +1,4 @@
-import { createList, switchList, fetchRemoteVideos, renameList } from './sync.js';
+import { createList, switchList, fetchRemoteVideos, renameList, deleteList } from './sync.js';
 import { showMessage } from './ui.js';
 
 export function showListModal(lists, current, messageDiv, onUpdate, actionCallback, titleText = 'Select List') {
@@ -81,8 +81,20 @@ export function showListModal(lists, current, messageDiv, onUpdate, actionCallba
             enterRenameMode(item, filename, nameSpan);
         };
 
+        // Delete Button
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerHTML = '🗑';
+        deleteBtn.title = 'Delete List';
+        deleteBtn.className = 'modal-icon-btn modal-delete-btn';
+
+        deleteBtn.onclick = (e) => {
+            e.stopPropagation();
+            enterDeleteConfirm(item, filename, nameSpan, renameBtn, deleteBtn);
+        };
+
         item.appendChild(nameSpan);
         item.appendChild(renameBtn);
+        item.appendChild(deleteBtn);
         listContainer.appendChild(item);
     });
 
@@ -143,6 +155,13 @@ export function showListModal(lists, current, messageDiv, onUpdate, actionCallba
             rb.className = 'modal-icon-btn';
             rb.onclick = (e) => { e.stopPropagation(); enterRenameMode(itemContainer, oldName, nameSpan); };
             itemContainer.appendChild(rb);
+
+            const db = document.createElement('button');
+            db.innerHTML = '🗑';
+            db.title = 'Delete List';
+            db.className = 'modal-icon-btn modal-delete-btn';
+            db.onclick = (e) => { e.stopPropagation(); enterDeleteConfirm(itemContainer, oldName, nameSpan, rb, db); };
+            itemContainer.appendChild(db);
         };
 
         saveBtn.onclick = (e) => { e.stopPropagation(); finish(); };
@@ -157,6 +176,60 @@ export function showListModal(lists, current, messageDiv, onUpdate, actionCallba
         itemContainer.appendChild(saveBtn);
         itemContainer.appendChild(cancelBtn);
         input.focus();
+    }
+
+    function enterDeleteConfirm(itemContainer, filename, nameSpan, renameBtn, deleteBtn) {
+        // Don't allow deleting the active list
+        if (filename === current) {
+            if (messageDiv) showMessage('Cannot delete the active list. Switch to another list first.', 'error', messageDiv);
+            return;
+        }
+
+        itemContainer.innerHTML = '';
+
+        const prompt = document.createElement('span');
+        prompt.textContent = `Delete ${filename.replace('.json', '')}?`;
+        prompt.style.color = '#e74c3c';
+
+        const confirmBtn = document.createElement('button');
+        confirmBtn.textContent = '✔';
+        confirmBtn.className = 'modal-icon-btn';
+        confirmBtn.style.color = 'red';
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = '✘';
+        cancelBtn.className = 'modal-icon-btn';
+
+        const doDelete = async () => {
+            try {
+                const res = await deleteList(filename);
+                if (res.success) {
+                    if (messageDiv) showMessage(`Deleted ${filename}`, 'success', messageDiv);
+                    // Remove the item from the modal
+                    itemContainer.remove();
+                } else {
+                    if (messageDiv) showMessage('Delete failed: ' + res.error, 'error', messageDiv);
+                    resetDelete();
+                }
+            } catch (e) {
+                if (messageDiv) showMessage('Error: ' + e.message, 'error', messageDiv);
+                resetDelete();
+            }
+        };
+
+        const resetDelete = () => {
+            itemContainer.innerHTML = '';
+            itemContainer.appendChild(nameSpan);
+            itemContainer.appendChild(renameBtn);
+            itemContainer.appendChild(deleteBtn);
+        };
+
+        confirmBtn.onclick = (e) => { e.stopPropagation(); doDelete(); };
+        cancelBtn.onclick = (e) => { e.stopPropagation(); resetDelete(); };
+
+        itemContainer.appendChild(prompt);
+        itemContainer.appendChild(confirmBtn);
+        itemContainer.appendChild(cancelBtn);
     }
 
     const newBtn = document.createElement('button');

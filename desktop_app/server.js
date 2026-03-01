@@ -106,6 +106,17 @@ function startServer(port, onSync, getSavePath, thumbnailsPath, listHandlers) {
                 res.status(500).send({ success: false, error: e.message });
             }
         });
+
+        server.post('/lists/delete', async (req, res) => {
+            try {
+                const { filename } = req.body;
+                if (!filename) return res.status(400).send({ success: false, error: 'Filename required' });
+                const result = await listHandlers.deleteList(filename);
+                res.send(result);
+            } catch (e) {
+                res.status(500).send({ success: false, error: e.message });
+            }
+        });
     }
 
     server.post('/sync', (req, res) => {
