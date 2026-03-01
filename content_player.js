@@ -1,12 +1,14 @@
 // Content script injected into YouTube pages to detect video end events.
 // Communicates with background.js for playback queue coordination.
+// Handles both regular videos (ended event) and Shorts (loop-restart detection).
 
 (function () {
     'use strict';
 
     let isPlaybackTab = false;
-    let videoEndHandlerAttached = false;
     let currentVideoElement = null;
+    let endedFiredForCurrentVideo = false;
+    let wasNearEnd = false;
 
     // Check with background if this tab is the active playback tab
     async function checkPlaybackStatus() {
@@ -19,19 +21,62 @@
         return isPlaybackTab;
     }
 
-    // Attach ended listener to the video element
+    function isShorts() {
+        return window.location.pathname.startsWith('/shorts/');
+    }
+
+    // Attach the appropriate listener depending on video type
     function attachVideoEndListener() {
         const video = document.querySelector('video');
         if (!video || video === currentVideoElement) return;
 
-        // Remove old listener if switching elements
-        if (currentVideoElement) {
-            currentVideoElement.removeEventListener('ended', onVideoEnded);
-        }
+        // Clean up previous listeners
+        detachListeners();
 
         currentVideoElement = video;
-        videoEndHandlerAttached = true;
-        video.addEventListener('ended', onVideoEnded);
+        endedFiredForCurrentVideo = false;
+        wasNearEnd = false;
+
+        if (isShorts() || video.loop) {
+            // Shorts (looping video): detect the loop restart.
+            // Track when playback is near the end, then fire when it seeks back to ~0.
+            video.addEventListener('timeupdate', onLoopTimeUpdate);
+            video.addEventListener('seeked', onLoopSeeked);
+        } else {
+            // Regular video: use the standard ended event
+            video.addEventListener('ended', onVideoEnded);
+        }
+    }
+
+    function detachListeners() {
+        if (currentVideoElement) {
+            currentVideoElement.removeEventListener('ended', onVideoEnded);
+            currentVideoElement.removeEventListener('timeupdate', onLoopTimeUpdate);
+            currentVideoElement.removeEventListener('seeked', onLoopSeeked);
+            currentVideoElement = null;
+        }
+        endedFiredForCurrentVideo = false;
+        wasNearEnd = false;
+    }
+
+    // Track when playback reaches near the end
+    function onLoopTimeUpdate() {
+        const video = currentVideoElement;
+        if (!video || video.duration <= 0) return;
+        if (video.currentTime >= video.duration - 1) {
+            wasNearEnd = true;
+        }
+    }
+
+    // Detect the loop restart: seeked back to near 0 after being near the end
+    function onLoopSeeked() {
+        const video = currentVideoElement;
+        if (!video || endedFiredForCurrentVideo) return;
+        if (wasNearEnd && video.currentTime < 1) {
+            // Loop just triggered — treat as "ended"
+            endedFiredForCurrentVideo = true;
+            onVideoEnded();
+        }
     }
 
     async function onVideoEnded() {
@@ -48,8 +93,7 @@
 
     // YouTube is an SPA — re-attach listener on navigation
     function onYouTubeNavigate() {
-        videoEndHandlerAttached = false;
-        currentVideoElement = null;
+        detachListeners();
         // Wait a moment for the new video element to mount
         setTimeout(() => {
             attachVideoEndListener();
@@ -95,10 +139,7 @@
                 sendResponse({ ok: true });
             } else if (message.type === 'PLAYBACK_DEACTIVATED') {
                 isPlaybackTab = false;
-                if (currentVideoElement) {
-                    currentVideoElement.removeEventListener('ended', onVideoEnded);
-                    currentVideoElement = null;
-                }
+                detachListeners();
                 sendResponse({ ok: true });
             }
             return false;
