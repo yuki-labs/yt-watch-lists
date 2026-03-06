@@ -28,41 +28,99 @@ document.addEventListener('DOMContentLoaded', async () => {
     let currentFilteredVideos = [];
     let isLoadingMore = false;
 
-    function animateFolderTransition(slideOutClass, slideInClass, updateFn) {
-        // Snapshot the current list as an overlay so it stays visible during transition
-        const rect = videoList.getBoundingClientRect();
-        const snapshot = videoList.cloneNode(true);
-        snapshot.id = '';
-        snapshot.style.position = 'absolute';
-        snapshot.style.top = rect.top + 'px';
-        snapshot.style.left = rect.left + 'px';
-        snapshot.style.width = rect.width + 'px';
-        snapshot.style.zIndex = '100';
-        snapshot.style.pointerEvents = 'none';
-        document.body.appendChild(snapshot);
+    function animateFolderTransition(direction, updateFn) {
+        const outX = direction === 'forward' ? '-40%' : '40%';
+        const inX = direction === 'forward' ? '40%' : '-40%';
+        const easing = 'cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        const dur = '0.2s';
 
-        // Animate snapshot out
-        snapshot.classList.add(slideOutClass);
-        snapshot.addEventListener('animationend', () => snapshot.remove(), { once: true });
+        // Capture old height of the inset container
+        const oldHeight = videoList.getBoundingClientRect().height;
 
-        // Render new content and slide it in simultaneously
-        updateFn();
-        render();
-        videoList.classList.add(slideInClass);
-        videoList.addEventListener('animationend', () => {
-            videoList.classList.remove(slideInClass);
-        }, { once: true });
+        // Phase 1: Slide old items OUT
+        const oldItems = videoList.querySelectorAll(':scope > *');
+        oldItems.forEach(el => {
+            el.style.transition = `transform ${dur} ${easing}, opacity ${dur} ease`;
+            el.style.transform = `translateX(${outX})`;
+            el.style.opacity = '0';
+        });
+
+        const afterSlideOut = () => {
+            // Lock inset to old height before swap
+            videoList.style.transition = 'none';
+            videoList.style.height = oldHeight + 'px';
+
+            // Swap content
+            updateFn();
+            render(true);
+
+            // Measure new natural height
+            videoList.style.height = '';
+            const newHeight = videoList.getBoundingClientRect().height;
+
+            // Lock back to old height, then animate to new
+            videoList.style.height = oldHeight + 'px';
+            void videoList.offsetHeight;
+
+            // Phase 2: Slide new items IN
+            const newItems = videoList.querySelectorAll(':scope > *');
+            newItems.forEach(el => {
+                el.style.transition = 'none';
+                el.style.transform = `translateX(${inX})`;
+                el.style.opacity = '0';
+            });
+
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    // Animate inset height
+                    videoList.style.transition = `height ${dur} ${easing}`;
+                    videoList.style.height = newHeight + 'px';
+
+                    // Slide items in
+                    newItems.forEach(el => {
+                        el.style.transition = `transform ${dur} ${easing}, opacity ${dur} ease`;
+                        el.style.transform = 'translateX(0)';
+                        el.style.opacity = '1';
+                    });
+
+                    // Clean up
+                    const first = newItems[0];
+                    if (first) {
+                        first.addEventListener('transitionend', function onDone(e) {
+                            if (e.propertyName !== 'transform') return;
+                            first.removeEventListener('transitionend', onDone);
+                            newItems.forEach(el => el.style.cssText = '');
+                            videoList.style.cssText = '';
+                        });
+                    } else {
+                        videoList.style.cssText = '';
+                    }
+                });
+            });
+        };
+
+        // Wait for slide-out to finish
+        const firstOld = oldItems[0];
+        if (firstOld) {
+            firstOld.addEventListener('transitionend', function onOut(e) {
+                if (e.propertyName !== 'transform') return;
+                firstOld.removeEventListener('transitionend', onOut);
+                afterSlideOut();
+            });
+        } else {
+            afterSlideOut();
+        }
     }
 
     function enterFolder(folderId) {
-        animateFolderTransition('slide-out-left', 'slide-in-right', () => {
+        animateFolderTransition('forward', () => {
             currentFolderId = folderId;
             displayedCount = VIDEOS_PER_PAGE;
         });
     }
 
     function exitFolder() {
-        animateFolderTransition('slide-out-right', 'slide-in-left', () => {
+        animateFolderTransition('back', () => {
             currentFolderId = null;
             displayedCount = VIDEOS_PER_PAGE;
         });
@@ -336,7 +394,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    function render() {
+    function render(skipFlip) {
         const rawTerm = searchInput.value;
         const lowerTerm = rawTerm.toLowerCase();
 
@@ -345,34 +403,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (oldBar) oldBar.remove();
 
         let sourceVideos;
+        let activeFolder = null;
 
         if (currentFolderId) {
-            // Drill-down: show folder children
             const folder = allVideos.find(v => v.id === currentFolderId);
             if (!folder || folder.type !== 'folder') {
-                // Folder was deleted — fall back to main list
                 currentFolderId = null;
                 sourceVideos = allVideos;
             } else {
+                activeFolder = folder;
                 sourceVideos = folder.children;
-
-                // Insert back-bar above the list
-                const backBar = document.createElement('div');
-                backBar.id = 'folder-back-bar';
-                backBar.className = 'folder-back-bar';
-
-                const backBtn = document.createElement('button');
-                backBtn.className = 'folder-back-btn';
-                backBtn.textContent = '← Back';
-                backBtn.onclick = exitFolder;
-
-                const folderName = document.createElement('span');
-                folderName.className = 'folder-back-title';
-                folderName.textContent = folder.title;
-
-                backBar.appendChild(backBtn);
-                backBar.appendChild(folderName);
-                videoList.parentNode.insertBefore(backBar, videoList);
             }
         } else {
             sourceVideos = allVideos;
@@ -387,7 +427,27 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Only display up to displayedCount videos
         const videosToShow = filteredVideos.slice(0, displayedCount);
-        renderList(videosToShow, videoList, handleRemove, handleMove, handleEdit, handleMoveToList, handleAddToFolder, enterFolder);
+        renderList(videosToShow, videoList, handleRemove, handleMove, handleEdit, handleMoveToList, handleAddToFolder, enterFolder, { skipFlip: !!skipFlip });
+
+        // Insert back-bar inside videoList AFTER renderList rebuilds
+        if (activeFolder) {
+            const backBar = document.createElement('div');
+            backBar.id = 'folder-back-bar';
+            backBar.className = 'folder-back-bar';
+
+            const backBtn = document.createElement('button');
+            backBtn.className = 'folder-back-btn';
+            backBtn.textContent = '← Back';
+            backBtn.onclick = exitFolder;
+
+            const folderName = document.createElement('span');
+            folderName.className = 'folder-back-title';
+            folderName.textContent = activeFolder.title;
+
+            backBar.appendChild(backBtn);
+            backBar.appendChild(folderName);
+            videoList.prepend(backBar);
+        }
 
         // Show count indicator if there are more videos
         updateScrollIndicator(filteredVideos.length, displayedCount);

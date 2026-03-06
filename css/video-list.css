@@ -63,10 +63,17 @@
     animation: slideInLeft 0.25s ease forwards;
 }
 
+.no-transitions,
+.no-transitions * {
+    transition: none !important;
+}
+
 #video-list {
     list-style: none;
     padding: 0;
     margin: 0;
+    overflow: hidden;
+    box-sizing: border-box;
 }
 
 .video-item {

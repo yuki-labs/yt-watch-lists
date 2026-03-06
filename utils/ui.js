@@ -2,7 +2,7 @@
 let lastScrollY = 0;
 let spacerAdded = false; // Tracks if we added top spacer & scroll
 
-export function renderList(videos, listElement, removeCallback, moveCallback, editCallback, moveToListCallback, addToFolderCallback, enterFolderCallback) {
+export function renderList(videos, listElement, removeCallback, moveCallback, editCallback, moveToListCallback, addToFolderCallback, enterFolderCallback, options = {}) {
     const emptyState = document.getElementById('empty-state');
 
     if (videos.length === 0) {
@@ -15,9 +15,11 @@ export function renderList(videos, listElement, removeCallback, moveCallback, ed
 
     // 1. Snapshot Old Positions (FLIP: First) - BEFORE any DOM changes
     const positions = new Map();
-    listElement.querySelectorAll('.video-item').forEach(li => {
-        if (li.dataset.id) positions.set(li.dataset.id, li.getBoundingClientRect().top);
-    });
+    if (!options.skipFlip) {
+        listElement.querySelectorAll('.video-item').forEach(li => {
+            if (li.dataset.id) positions.set(li.dataset.id, li.getBoundingClientRect().top);
+        });
+    }
 
     // 2. Reconcile DOM (Reuse/Create/Reorder)
     const currentItems = new Map();
@@ -61,29 +63,31 @@ export function renderList(videos, listElement, removeCallback, moveCallback, ed
     });
 
     // 3. Animate (FLIP: Invert & Play)
-    videos.forEach(video => {
-        const li = listElement.querySelector(`.video-item[data-id="${video.id}"]`);
-        if (!li) return;
+    if (!options.skipFlip) {
+        videos.forEach(video => {
+            const li = listElement.querySelector(`.video-item[data-id="${video.id}"]`);
+            if (!li) return;
 
-        const oldTop = positions.get(video.id);
-        if (oldTop !== undefined) {
-            const newTop = li.getBoundingClientRect().top;
-            const delta = oldTop - newTop;
+            const oldTop = positions.get(video.id);
+            if (oldTop !== undefined) {
+                const newTop = li.getBoundingClientRect().top;
+                const delta = oldTop - newTop;
 
-            if (delta !== 0) {
-                // Invert
-                li.style.transition = 'none';
-                li.style.transform = `translateY(${delta}px)`;
+                if (delta !== 0) {
+                    // Invert
+                    li.style.transition = 'none';
+                    li.style.transform = `translateY(${delta}px)`;
 
-                // Play
-                requestAnimationFrame(() => {
-                    void li.offsetHeight;
-                    li.style.transition = '';
-                    li.style.transform = '';
-                });
+                    // Play
+                    requestAnimationFrame(() => {
+                        void li.offsetHeight;
+                        li.style.transition = '';
+                        li.style.transform = '';
+                    });
+                }
             }
-        }
-    });
+        });
+    }
 
     // Close menus when clicking outside logic is handled at module level in desktop, 
     // but here strict mirroring suggests we might want to check if listeners act differently.
