@@ -1,3 +1,68 @@
+/* ── Folder Slide Transitions ── */
+@keyframes slideOutLeft {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    to {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+#video-list.slide-out-left {
+    animation: slideOutLeft 0.25s ease forwards;
+}
+
+#video-list.slide-in-right {
+    animation: slideInRight 0.25s ease forwards;
+}
+
+#video-list.slide-out-right {
+    animation: slideOutRight 0.25s ease forwards;
+}
+
+#video-list.slide-in-left {
+    animation: slideInLeft 0.25s ease forwards;
+}
+
 #video-list {
     list-style: none;
     padding: 0;

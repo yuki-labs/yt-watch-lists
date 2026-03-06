@@ -29,15 +29,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     let isLoadingMore = false;
 
     function enterFolder(folderId) {
-        currentFolderId = folderId;
-        displayedCount = VIDEOS_PER_PAGE;
-        render();
+        // Slide current list out to the left, then render folder contents sliding in from right
+        videoList.classList.add('slide-out-left');
+        const onEnd = () => {
+            videoList.removeEventListener('animationend', onEnd);
+            videoList.classList.remove('slide-out-left');
+            currentFolderId = folderId;
+            displayedCount = VIDEOS_PER_PAGE;
+            render();
+            videoList.classList.add('slide-in-right');
+            videoList.addEventListener('animationend', () => {
+                videoList.classList.remove('slide-in-right');
+            }, { once: true });
+        };
+        videoList.addEventListener('animationend', onEnd);
     }
 
     function exitFolder() {
-        currentFolderId = null;
-        displayedCount = VIDEOS_PER_PAGE;
-        render();
+        // Slide current list out to the right, then render main list sliding in from left
+        videoList.classList.add('slide-out-right');
+        const onEnd = () => {
+            videoList.removeEventListener('animationend', onEnd);
+            videoList.classList.remove('slide-out-right');
+            currentFolderId = null;
+            displayedCount = VIDEOS_PER_PAGE;
+            render();
+            videoList.classList.add('slide-in-left');
+            videoList.addEventListener('animationend', () => {
+                videoList.classList.remove('slide-in-left');
+            }, { once: true });
+        };
+        videoList.addEventListener('animationend', onEnd);
     }
 
     const clearSearchBtn = document.getElementById('clear-search-btn');
