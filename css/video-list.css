@@ -47,19 +47,19 @@
     }
 }
 
-#video-list.slide-out-left {
+.slide-out-left {
     animation: slideOutLeft 0.25s ease forwards;
 }
 
-#video-list.slide-in-right {
+.slide-in-right {
     animation: slideInRight 0.25s ease forwards;
 }
 
-#video-list.slide-out-right {
+.slide-out-right {
     animation: slideOutRight 0.25s ease forwards;
 }
 
-#video-list.slide-in-left {
+.slide-in-left {
     animation: slideInLeft 0.25s ease forwards;
 }
 

@@ -28,38 +28,44 @@ document.addEventListener('DOMContentLoaded', async () => {
     let currentFilteredVideos = [];
     let isLoadingMore = false;
 
+    function animateFolderTransition(slideOutClass, slideInClass, updateFn) {
+        // Snapshot the current list as an overlay so it stays visible during transition
+        const rect = videoList.getBoundingClientRect();
+        const snapshot = videoList.cloneNode(true);
+        snapshot.id = '';
+        snapshot.style.position = 'absolute';
+        snapshot.style.top = rect.top + 'px';
+        snapshot.style.left = rect.left + 'px';
+        snapshot.style.width = rect.width + 'px';
+        snapshot.style.zIndex = '100';
+        snapshot.style.pointerEvents = 'none';
+        document.body.appendChild(snapshot);
+
+        // Animate snapshot out
+        snapshot.classList.add(slideOutClass);
+        snapshot.addEventListener('animationend', () => snapshot.remove(), { once: true });
+
+        // Render new content and slide it in simultaneously
+        updateFn();
+        render();
+        videoList.classList.add(slideInClass);
+        videoList.addEventListener('animationend', () => {
+            videoList.classList.remove(slideInClass);
+        }, { once: true });
+    }
+
     function enterFolder(folderId) {
-        // Slide current list out to the left, then render folder contents sliding in from right
-        videoList.classList.add('slide-out-left');
-        const onEnd = () => {
-            videoList.removeEventListener('animationend', onEnd);
-            videoList.classList.remove('slide-out-left');
+        animateFolderTransition('slide-out-left', 'slide-in-right', () => {
             currentFolderId = folderId;
             displayedCount = VIDEOS_PER_PAGE;
-            render();
-            videoList.classList.add('slide-in-right');
-            videoList.addEventListener('animationend', () => {
-                videoList.classList.remove('slide-in-right');
-            }, { once: true });
-        };
-        videoList.addEventListener('animationend', onEnd);
+        });
     }
 
     function exitFolder() {
-        // Slide current list out to the right, then render main list sliding in from left
-        videoList.classList.add('slide-out-right');
-        const onEnd = () => {
-            videoList.removeEventListener('animationend', onEnd);
-            videoList.classList.remove('slide-out-right');
+        animateFolderTransition('slide-out-right', 'slide-in-left', () => {
             currentFolderId = null;
             displayedCount = VIDEOS_PER_PAGE;
-            render();
-            videoList.classList.add('slide-in-left');
-            videoList.addEventListener('animationend', () => {
-                videoList.classList.remove('slide-in-left');
-            }, { once: true });
-        };
-        videoList.addEventListener('animationend', onEnd);
+        });
     }
 
     const clearSearchBtn = document.getElementById('clear-search-btn');
