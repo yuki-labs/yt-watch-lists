@@ -348,6 +348,25 @@ h2.shift-up,
     border-top: 1px solid #eee;
 }
 
+.folder-children .video-item {
+    box-shadow: none !important;
+    border: none;
+    border-radius: 0;
+    margin-bottom: 0;
+    padding: 8px 12px;
+    border-bottom: 1px solid #eee;
+    transform: none;
+}
+
+.folder-children .video-item:hover {
+    transform: none;
+    box-shadow: none !important;
+}
+
+.folder-children .video-item:last-child {
+    border-bottom: none;
+}
+
 .folder-child-item {
     display: flex;
     align-items: center;

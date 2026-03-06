@@ -2,7 +2,7 @@
 let lastScrollY = 0;
 let spacerAdded = false; // Tracks if we added top spacer & scroll
 
-export function renderList(videos, listElement, removeCallback, moveCallback, editCallback, moveToListCallback, addToFolderCallback) {
+export function renderList(videos, listElement, removeCallback, moveCallback, editCallback, moveToListCallback, addToFolderCallback, enterFolderCallback) {
     const emptyState = document.getElementById('empty-state');
 
     if (videos.length === 0) {
@@ -35,7 +35,7 @@ export function renderList(videos, listElement, removeCallback, moveCallback, ed
         let li = currentItems.get(video.id);
         if (!li) {
             if (video.type === 'folder') {
-                li = createFolderItem(video, removeCallback, moveCallback, editCallback, moveToListCallback, addToFolderCallback);
+                li = createFolderItem(video, removeCallback, moveCallback, editCallback, moveToListCallback, addToFolderCallback, enterFolderCallback);
             } else {
                 li = createVideoItem(video, removeCallback, moveCallback, editCallback, moveToListCallback, addToFolderCallback);
             }
@@ -283,13 +283,12 @@ function showRenameDialog(currentTitle, onSave) {
     textarea.select();
 }
 
-function createFolderItem(folder, removeCallback, moveCallback, editCallback, moveToListCallback, addToFolderCallback) {
+function createFolderItem(folder, removeCallback, moveCallback, editCallback, moveToListCallback, addToFolderCallback, enterFolderCallback) {
     const li = document.createElement('li');
     li.className = 'video-item folder-item';
     li.dataset.id = folder.id;
     li._folderData = folder;
 
-    // Header
     const header = document.createElement('div');
     header.className = 'folder-header';
 
@@ -303,8 +302,7 @@ function createFolderItem(folder, removeCallback, moveCallback, editCallback, mo
 
     const pill = document.createElement('div');
     pill.className = 'folder-pill';
-    const collapsed = folder.collapsed !== false;
-    pill.textContent = `${collapsed ? '▶' : '▼'} ${folder.children.length} video${folder.children.length !== 1 ? 's' : ''}`;
+    pill.textContent = `▶ ${folder.children.length} video${folder.children.length !== 1 ? 's' : ''}`;
 
     const renameBtn = document.createElement('button');
     renameBtn.className = 'folder-rename-btn';
@@ -342,59 +340,28 @@ function createFolderItem(folder, removeCallback, moveCallback, editCallback, mo
     header.appendChild(thumbWrap);
     header.appendChild(infoDiv);
 
-    // Children container
-    const childrenDiv = document.createElement('div');
-    childrenDiv.className = 'folder-children';
-    if (collapsed) {
-        childrenDiv.style.display = 'none';
-    }
-
-    renderFolderChildren(childrenDiv, folder, removeCallback, moveCallback, editCallback, moveToListCallback, addToFolderCallback);
-
-    // Toggle expand/collapse
+    // Click to enter folder (drill-down)
     header.addEventListener('click', (e) => {
         e.stopPropagation();
-        const isCollapsed = childrenDiv.style.display === 'none';
-        childrenDiv.style.display = isCollapsed ? 'block' : 'none';
-        li._folderData.collapsed = !isCollapsed;
-        pill.textContent = `${isCollapsed ? '▼' : '▶'} ${li._folderData.children.length} video${li._folderData.children.length !== 1 ? 's' : ''}`;
+        if (enterFolderCallback) enterFolderCallback(folder.id);
     });
 
     li.appendChild(header);
-    li.appendChild(childrenDiv);
     return li;
 }
 
 function updateFolderItem(li, folder, removeCallback, moveCallback, editCallback, moveToListCallback, addToFolderCallback) {
     li._folderData = folder;
 
-    // Update title
     const titleEl = li.querySelector('.folder-title');
     if (titleEl && titleEl.textContent !== folder.title) {
         titleEl.textContent = folder.title;
     }
 
-    // Update pill
     const pill = li.querySelector('.folder-pill');
     if (pill) {
-        const collapsed = folder.collapsed !== false;
-        pill.textContent = `${collapsed ? '▶' : '▼'} ${folder.children.length} video${folder.children.length !== 1 ? 's' : ''}`;
+        pill.textContent = `▶ ${folder.children.length} video${folder.children.length !== 1 ? 's' : ''}`;
     }
-
-    // Update children
-    const childrenDiv = li.querySelector('.folder-children');
-    if (childrenDiv) {
-        renderFolderChildren(childrenDiv, folder, removeCallback, moveCallback, editCallback, moveToListCallback, addToFolderCallback);
-    }
-}
-
-function renderFolderChildren(container, folder, removeCallback, moveCallback, editCallback, moveToListCallback, addToFolderCallback) {
-    container.innerHTML = '';
-    folder.children.forEach(child => {
-        const childLi = createVideoItem(child, removeCallback, moveCallback, editCallback, moveToListCallback, addToFolderCallback);
-        childLi.classList.add('folder-child-video');
-        container.appendChild(childLi);
-    });
 }
 
 function createVideoItem(video, removeCallback, moveCallback, editCallback, moveToListCallback, addToFolderCallback) {

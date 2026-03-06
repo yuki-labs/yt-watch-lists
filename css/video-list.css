@@ -203,10 +203,144 @@
     background: rgba(0, 0, 0, 0.06);
 }
 
+/* ── Folder Drill-Down Back Bar ── */
+.folder-back-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    background: #f5f5f5;
+    border-radius: 10px;
+    border: 1px solid #eee;
+}
+
+.folder-back-btn {
+    background: none;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 4px 12px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #555;
+    white-space: nowrap;
+}
+
+.folder-back-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #222;
+}
+
+.folder-back-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #333;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Dark */
+body.dark .folder-back-bar {
+    background: #22223a;
+    border-color: #2a2a3e;
+}
+
+body.dark .folder-back-btn {
+    border-color: #3a3a4e;
+    color: #ccc;
+}
+
+body.dark .folder-back-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #e0e0e0;
+}
+
+body.dark .folder-back-title {
+    color: #e0e0e0;
+}
+
+/* Neumorphic */
+body.neumorphic .folder-back-bar {
+    background: #e0e5ec;
+    border: none;
+    border-radius: 15px;
+    box-shadow: 6px 6px 12px #9baec8, -6px -6px 12px #ffffff;
+}
+
+body.neumorphic .folder-back-btn {
+    background: #e0e5ec;
+    border: none;
+    border-radius: 50px;
+    box-shadow: 4px 4px 8px #9baec8, -4px -4px 8px #ffffff;
+    color: #4a4a4a;
+}
+
+body.neumorphic .folder-back-btn:hover {
+    box-shadow: 6px 6px 12px #9baec8, -6px -6px 12px #ffffff;
+    background: #e0e5ec;
+}
+
+body.neumorphic .folder-back-title {
+    color: #4a4a4a;
+}
+
+/* Dark Neumorphic */
+body.dark.neumorphic .folder-back-bar {
+    background: #2a2d32;
+    box-shadow: 6px 6px 12px #1e2024, -6px -6px 12px #363a40;
+}
+
+body.dark.neumorphic .folder-back-btn {
+    background: #2a2d32;
+    box-shadow: 4px 4px 8px #1e2024, -4px -4px 8px #363a40;
+    color: #d0d0d0;
+}
+
+body.dark.neumorphic .folder-back-btn:hover {
+    box-shadow: 6px 6px 12px #1e2024, -6px -6px 12px #363a40;
+}
+
+body.dark.neumorphic .folder-back-title {
+    color: #d0d0d0;
+}
+
 .folder-children {
     margin-top: 8px;
     padding-top: 8px;
     border-top: 1px solid #eee;
+}
+
+.folder-children .video-item,
+body.dark .folder-children .video-item,
+body.neumorphic .folder-children .video-item,
+body.dark.neumorphic .folder-children .video-item {
+    box-shadow: none;
+    border: none;
+    border-radius: 0;
+    margin-bottom: 0;
+    padding: 8px 12px;
+    border-bottom: 1px solid #eee;
+    transform: none;
+}
+
+body.neumorphic .folder-children .video-item:hover,
+body.dark.neumorphic .folder-children .video-item:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.folder-children .video-item:last-child {
+    border-bottom: none;
+}
+
+body.dark .folder-children .video-item {
+    border-bottom-color: #2a2a3e;
+}
+
+body.dark .folder-children {
+    border-top-color: #2a2a3e;
 }
 
 .folder-child-item {

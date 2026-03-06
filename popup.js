@@ -17,6 +17,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let allVideos = [];
 
+    // Folder drill-down state
+    let currentFolderId = null;
+
     // Lazy loading: only render VIDEOS_PER_PAGE at a time
     const VIDEOS_PER_PAGE = 20;
     let displayedCount = VIDEOS_PER_PAGE;
@@ -24,6 +27,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     // For infinite scroll
     let currentFilteredVideos = [];
     let isLoadingMore = false;
+
+    function enterFolder(folderId) {
+        currentFolderId = folderId;
+        displayedCount = VIDEOS_PER_PAGE;
+        render();
+    }
+
+    function exitFolder() {
+        currentFolderId = null;
+        displayedCount = VIDEOS_PER_PAGE;
+        render();
+    }
 
     const clearSearchBtn = document.getElementById('clear-search-btn');
 
@@ -297,7 +312,45 @@ document.addEventListener('DOMContentLoaded', async () => {
         const rawTerm = searchInput.value;
         const lowerTerm = rawTerm.toLowerCase();
 
-        const filteredVideos = allVideos.filter(video =>
+        // Remove old back-bar if present
+        const oldBar = document.getElementById('folder-back-bar');
+        if (oldBar) oldBar.remove();
+
+        let sourceVideos;
+
+        if (currentFolderId) {
+            // Drill-down: show folder children
+            const folder = allVideos.find(v => v.id === currentFolderId);
+            if (!folder || folder.type !== 'folder') {
+                // Folder was deleted — fall back to main list
+                currentFolderId = null;
+                sourceVideos = allVideos;
+            } else {
+                sourceVideos = folder.children;
+
+                // Insert back-bar above the list
+                const backBar = document.createElement('div');
+                backBar.id = 'folder-back-bar';
+                backBar.className = 'folder-back-bar';
+
+                const backBtn = document.createElement('button');
+                backBtn.className = 'folder-back-btn';
+                backBtn.textContent = '← Back';
+                backBtn.onclick = exitFolder;
+
+                const folderName = document.createElement('span');
+                folderName.className = 'folder-back-title';
+                folderName.textContent = folder.title;
+
+                backBar.appendChild(backBtn);
+                backBar.appendChild(folderName);
+                videoList.parentNode.insertBefore(backBar, videoList);
+            }
+        } else {
+            sourceVideos = allVideos;
+        }
+
+        const filteredVideos = sourceVideos.filter(video =>
             video.title.toLowerCase().includes(lowerTerm) || video.id.includes(rawTerm)
         );
 
@@ -306,7 +359,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Only display up to displayedCount videos
         const videosToShow = filteredVideos.slice(0, displayedCount);
-        renderList(videosToShow, videoList, handleRemove, handleMove, handleEdit, handleMoveToList, handleAddToFolder);
+        renderList(videosToShow, videoList, handleRemove, handleMove, handleEdit, handleMoveToList, handleAddToFolder, enterFolder);
 
         // Show count indicator if there are more videos
         updateScrollIndicator(filteredVideos.length, displayedCount);
